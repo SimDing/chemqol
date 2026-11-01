@@ -1,6 +1,7 @@
 -include .env
 
 DOTNET ?= dotnet
+ILSPYCMD ?= $(HOME)/.dotnet/tools/ilspycmd
 GAME_DIR ?= $(HOME)/.steam/steam/steamapps/common/Probably Stolen
 MOD_ID ?= chemqol
 MODS_DIR ?= $(GAME_DIR)/Mods
@@ -10,8 +11,9 @@ CONFIGURATION ?= Release
 OUTPUT_DIR = bin/$(CONFIGURATION)/netstandard2.1
 MOD_DLL_NAME = ChemQOL.dll
 MOD_DLL = $(OUTPUT_DIR)/$(MOD_DLL_NAME)
+DECOMPILE_DIR ?= decompiled/Assembly-CSharp
 
-.PHONY: all help check-game build install uninstall clean
+.PHONY: all help check-game build install uninstall install-decompiler decompile clean
 
 all: build
 
@@ -19,6 +21,8 @@ help:
 	@printf '%s\n' \
 	  'Targets:' \
 	  '  make build     Compile the mod' \
+	  '  make decompile Decompile the game assembly into $(DECOMPILE_DIR)' \
+	  '  make install-decompiler Install the ILSpy command-line tool' \
 	  '  make install   Build and copy the mod into the game Mods folder' \
 	  '  make uninstall Remove this mod DLL and manifest from the game folder' \
 	  '  make clean     Remove local build output' \
@@ -48,6 +52,17 @@ install: build
 	install -d "$(MODS_DIR)/$(MOD_ID)"
 	install -m 644 "$(MOD_DLL)" "$(MODS_DIR)/$(MOD_ID)/$(MOD_DLL_NAME)"
 	install -m 644 manifest.xml "$(MODS_DIR)/$(MOD_ID)/manifest.xml"
+
+install-decompiler:
+	$(DOTNET) tool install --global ilspycmd
+
+decompile: check-game
+	@command -v "$(ILSPYCMD)" >/dev/null 2>&1 || test -x "$(ILSPYCMD)" || { \
+	  printf 'ILSpy command not found. Run: make install-decompiler\n' >&2; \
+	  exit 1; \
+	}
+	mkdir -p "$(DECOMPILE_DIR)"
+	"$(ILSPYCMD)" -p -o "$(DECOMPILE_DIR)" "$(MANAGED_DIR)/Assembly-CSharp.dll"
 
 uninstall:
 	@rm -f "$(MODS_DIR)/$(MOD_ID)/$(MOD_DLL_NAME)" "$(MODS_DIR)/$(MOD_ID)/manifest.xml"
