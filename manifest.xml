@@ -3,7 +3,7 @@
   <ID>de.simonding.chemqol</ID>
   <Name>ChemQOL</Name>
   <Author>Simon Ding</Author>
-  <ModVersion>0.1.0</ModVersion>
+  <ModVersion>1.0</ModVersion>
   <Description>Quality-of-life changes for Probably Stolen.</Description>
   <GameVersions>
     <Version>0.46</Version>

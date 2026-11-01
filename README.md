@@ -43,6 +43,14 @@ Build and install it into the game's `Mods/de.simonding.chemqol` directory:
 make install
 ```
 
+To create a versioned ZIP suitable for attaching to a GitHub release:
+
+```sh
+make release
+```
+
+The archive is written to `dist/` and contains the installable mod folder and this README.
+
 ## 简体中文（机器翻译）
 
 ChemQOL 是一款为 **Probably Stolen** 中化学工作流程提供便利功能的模组。它主要改进化学设备和化学液体的处理，同时也提供一些可用于水的液体操作便利功能。

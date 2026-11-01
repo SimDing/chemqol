@@ -11,9 +11,11 @@ CONFIGURATION ?= Release
 OUTPUT_DIR = bin/$(CONFIGURATION)/netstandard2.1
 MOD_DLL_NAME = ChemQOL.dll
 MOD_DLL = $(OUTPUT_DIR)/$(MOD_DLL_NAME)
+MOD_VERSION ?= $(shell awk -F'[<>]' '/<ModVersion>/{print $$3; exit}' manifest.xml)
+RELEASE_ARCHIVE ?= dist/ChemQOL-$(MOD_VERSION).zip
 DECOMPILE_DIR ?= decompiled/Assembly-CSharp
 
-.PHONY: all help check-game build install uninstall install-decompiler decompile clean
+.PHONY: all help check-game build install release uninstall install-decompiler decompile clean
 
 all: build
 
@@ -24,6 +26,7 @@ help:
 	  '  make decompile Decompile the game assembly into $(DECOMPILE_DIR)' \
 	  '  make install-decompiler Install the ILSpy command-line tool' \
 	  '  make install   Build and copy the mod into the game Mods folder' \
+	  '  make release   Build a versioned GitHub release ZIP in dist/' \
 	  '  make uninstall Remove this mod DLL and manifest from the game folder' \
 	  '  make clean     Remove local build output' \
 	  '' \
@@ -53,6 +56,19 @@ install: build
 	install -m 644 "$(MOD_DLL)" "$(MODS_DIR)/$(MOD_ID)/$(MOD_DLL_NAME)"
 	install -m 644 manifest.xml "$(MODS_DIR)/$(MOD_ID)/manifest.xml"
 	install -m 644 Localization/*.csv "$(MODS_DIR)/$(MOD_ID)/Localization/"
+
+release: build
+	@command -v zip >/dev/null 2>&1 || { printf 'The zip utility is required for make release.\n' >&2; exit 1; }
+	@mkdir -p dist
+	@set -eu; staging=$$(mktemp -d); trap 'rm -rf "$$staging"' EXIT; \
+	  mod_dir="$$staging/Mods/$(MOD_ID)"; \
+	  mkdir -p "$$mod_dir/Localization"; \
+	  install -m 644 "$(MOD_DLL)" "$$mod_dir/$(MOD_DLL_NAME)"; \
+	  install -m 644 manifest.xml "$$mod_dir/manifest.xml"; \
+	  install -m 644 Localization/*.csv "$$mod_dir/Localization/"; \
+	  install -m 644 README.md "$$staging/README.md"; \
+	  cd "$$staging"; zip -qr "$(abspath $(RELEASE_ARCHIVE))" .
+	@printf 'Created %s\n' "$(RELEASE_ARCHIVE)"
 
 install-decompiler:
 	$(DOTNET) tool install --global ilspycmd
