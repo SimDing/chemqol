@@ -6,11 +6,11 @@ using UnityEngine;
 internal static class PourWhileSelectedPatch
 {
     /*
-     * The smallest container in the game is 1 ml, but we can create smaller amounts by producing birth-control pills of 0.2 ml each.
-     * This makes 0.2 ml the smallest separable amount of liquid in the game.
-     * Therefore, we set the pour fraction to 0.2 to match this smallest separable amount.
+     * The smallest container in the game is 1 ml, but we can create smaller amounts by producing birth-control pills of 0.1 ml each.
+     * This makes 0.1 ml the smallest separable amount of liquid in the game.
+     * Therefore, we set the pour fraction to 0.1 to match this smallest separable amount.
     */
-    private const int PourFractionInverse = 5;
+    private const int PourFractionInverse = 10;
 
     private static void Prefix(GameItem ___currentItem)
     {
