@@ -16,18 +16,7 @@ internal static class ChemFinisherAutoSelectPatch
             return;
         }
 
-        ChemFinisherRecipe bestRecipe = null;
-        int bestIngredientAmount = 0;
-
-        foreach (ChemFinisherRecipe recipe in ChemFinisherRecipe.chemFinisherRecipes)
-        {
-            int ingredientAmount = item.GetTagReadonly(Liquid.GetCurrentPartFromId(recipe.activeIngredientId)).GetInt();
-            if (ingredientAmount > bestIngredientAmount)
-            {
-                bestRecipe = recipe;
-                bestIngredientAmount = ingredientAmount;
-            }
-        }
+        ChemFinisherRecipe bestRecipe = FindBestRecipe(item, out int bestIngredientAmount);
 
         if (bestRecipe == null)
         {
@@ -41,5 +30,23 @@ internal static class ChemFinisherAutoSelectPatch
             state.Enable().SetString(bestRecipe.identifier);
         });
         ModEntry.Logger.Log($"Chem finisher selected '{bestRecipe.identifier}' from input ingredient volume {bestIngredientAmount}.");
+    }
+
+    private static ChemFinisherRecipe FindBestRecipe(GameItem item, out int bestIngredientAmount)
+    {
+        ChemFinisherRecipe bestRecipe = null;
+        bestIngredientAmount = 0;
+
+        foreach (ChemFinisherRecipe recipe in ChemFinisherRecipe.chemFinisherRecipes)
+        {
+            int ingredientAmount = item.GetTagReadonly(Liquid.GetCurrentPartFromId(recipe.activeIngredientId)).GetInt();
+            if (ingredientAmount > bestIngredientAmount)
+            {
+                bestRecipe = recipe;
+                bestIngredientAmount = ingredientAmount;
+            }
+        }
+
+        return bestRecipe;
     }
 }
