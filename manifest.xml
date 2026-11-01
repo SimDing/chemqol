@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Manifest>
-  <ID>chemqol</ID>
+  <ID>de.simonding.chemqol</ID>
   <Name>ChemQOL</Name>
   <Author>Simon Ding</Author>
   <ModVersion>0.1.0</ModVersion>

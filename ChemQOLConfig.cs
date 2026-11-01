@@ -1,6 +1,6 @@
 internal static class ChemQOLConfig
 {
-    internal const string ModId = "chemqol";
+    internal const string ModId = "de.simonding.chemqol";
 
     private static ConfigEntry<bool> pourWhileSelected;
     private static ConfigEntry<bool> pipetteDrawWhileSelected;

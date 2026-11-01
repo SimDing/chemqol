@@ -3,7 +3,7 @@
 DOTNET ?= dotnet
 ILSPYCMD ?= $(HOME)/.dotnet/tools/ilspycmd
 GAME_DIR ?= $(HOME)/.steam/steam/steamapps/common/Probably Stolen
-MOD_ID ?= chemqol
+MOD_ID ?= de.simonding.chemqol
 MODS_DIR ?= $(GAME_DIR)/Mods
 MANAGED_DIR = $(GAME_DIR)/Probably Stolen_Data/Managed
 PROJECT = ChemQOL.csproj
