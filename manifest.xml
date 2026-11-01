@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Manifest>
+  <ID>chemqol</ID>
+  <Name>ChemQOL</Name>
+  <Author>Simon Ding</Author>
+  <ModVersion>0.1.0</ModVersion>
+  <Description>Quality-of-life changes for Probably Stolen.</Description>
+  <GameVersions>
+    <Version>0.46</Version>
+  </GameVersions>
+  <Prerequisites />
+  <Assemblies>
+    <Assembly>ChemQOL.dll</Assembly>
+  </Assemblies>
+  <Capabilities />
+</Manifest>
