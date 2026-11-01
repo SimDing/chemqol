@@ -36,6 +36,12 @@ internal static class ChemQOLConfig
         }
 
         var sectionProperty = typeof(ConfigEntry).GetProperty(nameof(ConfigEntry.Section));
+        if (sectionProperty == null || !sectionProperty.CanWrite)
+        {
+            ModEntry.Logger?.Warning("Config section localization skipped: ConfigEntry.Section is not writable.");
+            return;
+        }
+
         foreach (ConfigEntry entry in config.Entries)
         {
             string localizationKey = entry.Key switch
@@ -51,7 +57,14 @@ internal static class ChemQOLConfig
 
             if (localizationKey != null)
             {
-                sectionProperty.SetValue(entry, ModHelper.GetLocalized(modId, localizationKey));
+                try
+                {
+                    sectionProperty.SetValue(entry, ModHelper.GetLocalized(modId, localizationKey));
+                }
+                catch (System.Exception exception)
+                {
+                    ModEntry.Logger?.Warning($"Config section localization failed for '{entry.Key}': {exception.Message}");
+                }
             }
         }
     }
