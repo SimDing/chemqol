@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <Compile Remove="probably-stolen-modding/**/*.cs" />
+    <Compile Remove="decompiled/**/*.cs" />
     <Reference Include="Assembly-CSharp">
       <HintPath>$(GameManagedPath)/Assembly-CSharp.dll</HintPath>
       <Private>false</Private>
