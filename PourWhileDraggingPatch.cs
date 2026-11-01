@@ -2,8 +2,8 @@ using System;
 using HarmonyLib;
 using UnityEngine;
 
-[HarmonyPatch(typeof(ItemMouseDragHandler), "OnEventMouseScroll")]
-internal static class PourWhileDraggingPatch
+[HarmonyPatch(typeof(ItemSelectHandler), "OnEventUpdate")]
+internal static class PourWhileSelectedPatch
 {
     /*
      * The smallest container in the game is 1 ml, but we can create smaller amounts by producing birth-control pills of 0.2 ml each.
@@ -12,50 +12,43 @@ internal static class PourWhileDraggingPatch
     */
     private const int PourFractionInverse = 5;
 
-    private static bool Prefix(
-        Vector2 scrollDelta,
-        bool ___isDragging,
-        GameItemElement ___currentItem)
+    private static void Prefix(GameItem ___currentItem)
     {
-        if (scrollDelta.sqrMagnitude > 0f && (___isDragging || scrollDelta.y < 0f))
+        Vector2 scrollDelta = Input.mouseScrollDelta;
+        if (scrollDelta.sqrMagnitude > 0f)
         {
-            Debug.Log($"[ChemQOL Pour] Scroll event: delta=({scrollDelta.x}, {scrollDelta.y}), dragging={___isDragging}, source={Describe(___currentItem)}");
+            Debug.Log($"[ChemQOL Pour] Selection scroll: delta=({scrollDelta.x}, {scrollDelta.y}), source={Describe(___currentItem)}");
         }
 
-        if (!___isDragging)
+        if (scrollDelta.sqrMagnitude <= 0f)
         {
-            if (scrollDelta.y < 0f)
-            {
-                Debug.Log("[ChemQOL Pour] Ignored: no item is being dragged.");
-            }
-
-            return true;
+            return;
         }
 
         if (scrollDelta.y >= 0f)
         {
             Debug.Log("[ChemQOL Pour] Ignored: wheel direction is not down (expected negative Y).");
-            return true;
+            return;
         }
 
-        if (___currentItem == null || ___currentItem.IsDestroyed())
+        if (___currentItem == null || (___currentItem is GameItemElement selectedElement && selectedElement.IsDestroyed()))
         {
-            Debug.Log("[ChemQOL Pour] Ignored: dragged item is null or destroyed.");
-            return true;
+            Debug.Log("[ChemQOL Pour] Ignored: no live item is selected.");
+            return;
         }
 
         GameItem source = ___currentItem;
-        GameItem target = RenderHandler.RaycastElement<GameItem>(Input.mousePosition, ___currentItem.fakeBackground);
+        GameItem target = RenderHandler.RaycastElement<GameItem>(Input.mousePosition);
         if (target == null)
         {
             Debug.Log("[ChemQOL Pour] Ignored: no target item under the cursor.");
-            return true;
+            return;
         }
 
         if (target == source)
         {
-            Debug.Log("[ChemQOL Pour] Ignored: raycast returned the dragged item itself.");
-            return true;
+            Debug.Log("[ChemQOL Pour] Ignored: cursor is over the selected source item.");
+            return;
         }
 
         bool sourceIsLiquidContainer = source.IsTag("LIQUID_CONTAINER_TAG");
@@ -67,7 +60,7 @@ internal static class PourWhileDraggingPatch
         if (!sourceIsLiquidContainer || !targetIsLiquidContainer || !mayTarget || !canTarget)
         {
             Debug.Log("[ChemQOL Pour] Ignored: source/target must be compatible liquid containers.");
-            return true;
+            return;
         }
 
         int sourceVolume = WaterHelper.GetTotalCapacity(source);
@@ -76,15 +69,15 @@ internal static class PourWhileDraggingPatch
         Debug.Log($"[ChemQOL Pour] Volumes: source={sourceVolume}, targetFree={freeCapacity}, requestedPour={amountToPour}.");
         if (amountToPour <= 0)
         {
-            Debug.Log("[ChemQOL Pour] Consumed wheel-down: source is empty or target is full.");
-            return false;
+            Debug.Log("[ChemQOL Pour] No transfer: source is empty or target is full.");
+            return;
         }
 
         GameItem stagingContainer = DirectoryMaster.Item(source.identifier, isOwned: false);
         if (stagingContainer == null)
         {
             Debug.LogError($"[ChemQOL Pour] Failed to create staging container from '{source.identifier}'.");
-            return false;
+            return;
         }
 
         try
@@ -114,6 +107,12 @@ internal static class PourWhileDraggingPatch
             WaterHelper.UpdateWaterBottleSound(source);
             WaterHelper.UpdateWaterBottleSound(target);
             AudioHelper.PourWater();
+
+            if (WaterHelper.IsEmpty(source))
+            {
+                Debug.Log("[ChemQOL Pour] Source is empty; ending item selection.");
+                ItemSelectHandler.current?.EndSelect();
+            }
         }
         catch (Exception exception)
         {
@@ -125,7 +124,6 @@ internal static class PourWhileDraggingPatch
             stagingContainer.Destroy();
         }
 
-        return false;
     }
 
     private static string Describe(GameItem item)
