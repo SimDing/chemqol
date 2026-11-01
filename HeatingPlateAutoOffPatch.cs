@@ -26,6 +26,6 @@ internal static class HeatingPlateAutoOffPatch
         {
             tag.Enable().SetInt(0);
         });
-        UnityEngine.Debug.Log("[ChemQOL] Heating plate switched off after a liquid container was added.");
+        ModEntry.Logger.Log("Heating plate switched off after a liquid container was added.");
     }
 }

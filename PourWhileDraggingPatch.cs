@@ -17,7 +17,7 @@ internal static class PourWhileSelectedPatch
         Vector2 scrollDelta = Input.mouseScrollDelta;
         if (scrollDelta.sqrMagnitude > 0f)
         {
-            Debug.Log($"[ChemQOL Pour] Selection scroll: delta=({scrollDelta.x}, {scrollDelta.y}), source={Describe(___currentItem)}");
+            ModEntry.Logger.Log($"Pour: selection scroll delta=({scrollDelta.x}, {scrollDelta.y}), source={Describe(___currentItem)}");
         }
 
         if (scrollDelta.sqrMagnitude <= 0f)
@@ -28,7 +28,7 @@ internal static class PourWhileSelectedPatch
         bool isDrawing = scrollDelta.y > 0f;
         if (scrollDelta.y == 0f)
         {
-            Debug.Log("[ChemQOL Pour] Ignored: scroll event has no vertical movement.");
+            ModEntry.Logger.Warning("Pour ignored: scroll event has no vertical movement.");
             return;
         }
 
@@ -39,7 +39,7 @@ internal static class PourWhileSelectedPatch
 
         if (___currentItem == null || (___currentItem is GameItemElement selectedElement && selectedElement.IsDestroyed()))
         {
-            Debug.Log("[ChemQOL Pour] Ignored: no live item is selected.");
+            ModEntry.Logger.Log("Pour ignored: no live item is selected.");
             return;
         }
 
@@ -47,20 +47,20 @@ internal static class PourWhileSelectedPatch
         bool sourceIsPipette = source.IsTag("LIQUID_CONTAINER_DROPPER_TAG");
         if (isDrawing && !sourceIsPipette)
         {
-            Debug.Log("[ChemQOL Pour] Ignored wheel-up: selected item is not a pipette.");
+            ModEntry.Logger.Log("Pour ignored on wheel-up: selected item is not a pipette.");
             return;
         }
 
         GameItem target = RenderHandler.RaycastElement<GameItem>(Input.mousePosition);
         if (target == null)
         {
-            Debug.Log("[ChemQOL Pour] Ignored: no target item under the cursor.");
+            ModEntry.Logger.Log("Pour ignored: no target item under the cursor.");
             return;
         }
 
         if (target == source)
         {
-            Debug.Log("[ChemQOL Pour] Ignored: cursor is over the selected source item.");
+            ModEntry.Logger.Log("Pour ignored: cursor is over the selected source item.");
             return;
         }
 
@@ -68,34 +68,34 @@ internal static class PourWhileSelectedPatch
         bool targetIsLiquidContainer = target.IsTag("LIQUID_CONTAINER_TAG");
         bool mayTarget = source.MayTarget(target);
         bool canTarget = source.CanTarget(target);
-        Debug.Log($"[ChemQOL Pour] Candidate: mode={(isDrawing ? "draw" : "pour")}; pipette={sourceIsPipette}; source={Describe(source)} liquidContainer={sourceIsLiquidContainer}; target={Describe(target)} liquidContainer={targetIsLiquidContainer}; mayTarget={mayTarget}; canTarget={canTarget}.");
+        ModEntry.Logger.Log($"Pour candidate: mode={(isDrawing ? "draw" : "pour")}; pipette={sourceIsPipette}; source={Describe(source)} liquidContainer={sourceIsLiquidContainer}; target={Describe(target)} liquidContainer={targetIsLiquidContainer}; mayTarget={mayTarget}; canTarget={canTarget}.");
 
         if (!sourceIsLiquidContainer || !targetIsLiquidContainer || !mayTarget || !canTarget)
         {
-            Debug.Log("[ChemQOL Pour] Ignored: source/target must be compatible liquid containers.");
+            ModEntry.Logger.Log("Pour ignored: source and target must be compatible liquid containers.");
             return;
         }
 
         int selectedCapacity = WaterHelper.GetTotalCapacity(source);
         int receiverFreeCapacity = WaterHelper.GetFreeCapacity(isDrawing ? source : target);
         int amountToPour = Math.Min((selectedCapacity + PourFractionInverse - 1) / PourFractionInverse, receiverFreeCapacity);
-        Debug.Log($"[ChemQOL Pour] Volumes: selectedCapacity={selectedCapacity}, receiverFree={receiverFreeCapacity}, requestedTransfer={amountToPour}.");
+        ModEntry.Logger.Log($"Pour volumes: selectedCapacity={selectedCapacity}, receiverFree={receiverFreeCapacity}, requestedTransfer={amountToPour}.");
         if (amountToPour <= 0)
         {
-            Debug.Log("[ChemQOL Pour] No transfer: source is empty or target is full.");
+            ModEntry.Logger.Log("Pour skipped: source is empty or target is full.");
             return;
         }
 
         GameItem stagingContainer = DirectoryMaster.Item(source.identifier, isOwned: false);
         if (stagingContainer == null)
         {
-            Debug.LogError($"[ChemQOL Pour] Failed to create staging container from '{source.identifier}'.");
+            ModEntry.Logger.Error($"Pour failed: could not create staging container from '{source.identifier}'.");
             return;
         }
 
         try
         {
-            Debug.Log($"[ChemQOL Pour] Created staging container '{stagingContainer.identifier}'. Setting capacity to {amountToPour}.");
+            ModEntry.Logger.Log($"Pour: created staging container '{stagingContainer.identifier}' with capacity {amountToPour}.");
             stagingContainer.ModifyTag("LIQUID_CONTAINER_CAPACITY", state =>
             {
                 state.Enable().SetInt(amountToPour);
@@ -111,13 +111,13 @@ internal static class PourWhileSelectedPatch
 
             GameItem transferSource = isDrawing ? target : source;
             GameItem transferReceiver = isDrawing ? source : target;
-            Debug.Log($"[ChemQOL Pour] Transferring {Describe(transferSource)} -> staging container.");
+            ModEntry.Logger.Log($"Pour: transferring {Describe(transferSource)} to staging container.");
             WaterHelper.TransferLiquid(transferSource, stagingContainer);
-            Debug.Log($"[ChemQOL Pour] First transfer complete: source={WaterHelper.GetTotalVolume(source)}, staged={WaterHelper.GetTotalVolume(stagingContainer)}.");
+            ModEntry.Logger.Log($"Pour: first transfer complete; source={WaterHelper.GetTotalVolume(source)}, staged={WaterHelper.GetTotalVolume(stagingContainer)}.");
 
-            Debug.Log($"[ChemQOL Pour] Transferring staging container -> {Describe(transferReceiver)}.");
+            ModEntry.Logger.Log($"Pour: transferring staging container to {Describe(transferReceiver)}.");
             WaterHelper.TransferLiquid(stagingContainer, transferReceiver);
-            Debug.Log($"[ChemQOL Pour] {(isDrawing ? "Draw" : "Pour")} complete: staged={WaterHelper.GetTotalVolume(stagingContainer)}, receiver={WaterHelper.GetTotalVolume(transferReceiver)}.");
+            ModEntry.Logger.Log($"{(isDrawing ? "Draw" : "Pour")} complete: staged={WaterHelper.GetTotalVolume(stagingContainer)}, receiver={WaterHelper.GetTotalVolume(transferReceiver)}.");
 
             WaterHelper.UpdateWaterBottleSound(source);
             WaterHelper.UpdateWaterBottleSound(target);
@@ -136,17 +136,17 @@ internal static class PourWhileSelectedPatch
 
             if (!isDrawing && WaterHelper.IsEmpty(source))
             {
-                Debug.Log("[ChemQOL Pour] Source is empty; ending item selection.");
+                ModEntry.Logger.Log("Pour: source is empty; ending item selection.");
                 ItemSelectHandler.current?.EndSelect();
             }
         }
         catch (Exception exception)
         {
-            Debug.LogError($"[ChemQOL Pour] Transfer failed: {exception}");
+            ModEntry.Logger.Error($"Pour transfer failed: {exception}");
         }
         finally
         {
-            Debug.Log("[ChemQOL Pour] Destroying staging container.");
+            ModEntry.Logger.Log("Pour: destroying staging container.");
             stagingContainer.Destroy();
         }
 

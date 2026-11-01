@@ -32,7 +32,7 @@ internal static class ChemFinisherAutoSelectPatch
         if (bestRecipe == null)
         {
             machine.DisableTag(MachineChemFinisher.SELECTED_CHEM_ID_TAG);
-            UnityEngine.Debug.Log("[ChemQOL] Chem finisher found no eligible output matching the input container.");
+            ModEntry.Logger.Log("Chem finisher found no output matching the input container.");
             return;
         }
 
@@ -40,6 +40,6 @@ internal static class ChemFinisherAutoSelectPatch
         {
             state.Enable().SetString(bestRecipe.identifier);
         });
-        UnityEngine.Debug.Log($"[ChemQOL] Chem finisher selected '{bestRecipe.identifier}' from input ingredient volume {bestIngredientAmount}.");
+        ModEntry.Logger.Log($"Chem finisher selected '{bestRecipe.identifier}' from input ingredient volume {bestIngredientAmount}.");
     }
 }

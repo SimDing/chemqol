@@ -1,21 +1,21 @@
 public class ModEntry : IMod
 {
-    private ModLog log;
+    internal static ModLog Logger { get; private set; }
 
     public void Init(ModManifest manifest)
     {
-        log = new ModLog(manifest);
+        Logger = new ModLog(manifest);
         ChemQOLConfig.Initialize(manifest.ID);
-        log.Log("ChemQOL initialized.");
+        Logger.Log("Initialized.");
     }
 
     public void OnEnable()
     {
-        log.Log("ChemQOL enabled.");
+        Logger.Log("Enabled.");
     }
 
     public void OnDisable()
     {
-        log.Log("ChemQOL disabled.");
+        Logger.Log("Disabled.");
     }
 }
