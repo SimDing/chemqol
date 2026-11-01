@@ -1,0 +1,7 @@
+option_scroll_to_pour,Scroll down to pour
+option_pipette_draw,Scroll up to draw with pipette
+option_heating_plate_auto_off,Turn heating plate off when adding a container
+option_chem_finisher_auto_select,Auto-select Chem Finisher recipe
+option_close_chem_finisher_selector,Close Chem Finisher recipe selector after selection
+section_liquid_handling,Liquid Handling
+section_machines,Machines

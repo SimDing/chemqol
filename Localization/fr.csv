@@ -1,0 +1,7 @@
+option_scroll_to_pour,Faire défiler vers le bas pour verser
+option_pipette_draw,Faire défiler vers le haut pour aspirer avec la pipette
+option_heating_plate_auto_off,Éteindre la plaque chauffante lors de l'ajout d'un récipient
+option_chem_finisher_auto_select,Sélectionner automatiquement la recette du poste de finition
+option_close_chem_finisher_selector,Fermer le sélecteur de recettes du poste de finition après la sélection
+section_liquid_handling,Manipulation des liquides
+section_machines,Machines

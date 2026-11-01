@@ -1,0 +1,7 @@
+option_scroll_to_pour,下にスクロールして注ぐ
+option_pipette_draw,上にスクロールしてスポイトで吸い取る
+option_heating_plate_auto_off,容器を入れたときに加熱プレートをオフにする
+option_chem_finisher_auto_select,化学フィニッシャーのレシピを自動選択
+option_close_chem_finisher_selector,選択後に化学フィニッシャーのレシピ選択画面を閉じる
+section_liquid_handling,液体の取り扱い
+section_machines,機械

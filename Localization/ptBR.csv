@@ -1,0 +1,7 @@
+option_scroll_to_pour,Role para baixo para despejar
+option_pipette_draw,Role para cima para aspirar com a pipeta
+option_heating_plate_auto_off,Desligar a placa aquecedora ao inserir um recipiente
+option_chem_finisher_auto_select,Selecionar automaticamente a receita do Chem Finisher
+option_close_chem_finisher_selector,Fechar o seletor de receitas do Chem Finisher após a seleção
+section_liquid_handling,Manuseio de líquidos
+section_machines,Máquinas

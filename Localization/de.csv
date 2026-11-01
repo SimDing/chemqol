@@ -1,0 +1,7 @@
+option_scroll_to_pour,Nach unten scrollen zum Ausgießen
+option_pipette_draw,Nach oben scrollen zum Aufziehen mit der Pipette
+option_heating_plate_auto_off,Heizplatte beim Einsetzen eines Behälters ausschalten
+option_chem_finisher_auto_select,Rezept für das Chemikalien-Konfektionsmodul automatisch auswählen
+option_close_chem_finisher_selector,Rezeptauswahl des Chemikalien-Konfektionsmoduls nach der Auswahl schließen
+section_liquid_handling,Umgang mit Flüssigkeiten
+section_machines,Maschinen

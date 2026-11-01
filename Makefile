@@ -49,9 +49,10 @@ build: check-game
 	  -p:GameManagedPath="$(MANAGED_DIR)"
 
 install: build
-	install -d "$(MODS_DIR)/$(MOD_ID)"
+	install -d "$(MODS_DIR)/$(MOD_ID)/Localization"
 	install -m 644 "$(MOD_DLL)" "$(MODS_DIR)/$(MOD_ID)/$(MOD_DLL_NAME)"
 	install -m 644 manifest.xml "$(MODS_DIR)/$(MOD_ID)/manifest.xml"
+	install -m 644 Localization/*.csv "$(MODS_DIR)/$(MOD_ID)/Localization/"
 
 install-decompiler:
 	$(DOTNET) tool install --global ilspycmd

@@ -1,0 +1,7 @@
+option_scroll_to_pour,向下滚动以倾倒
+option_pipette_draw,向上滚动以用滴管吸取
+option_heating_plate_auto_off,放入容器时关闭加热板
+option_chem_finisher_auto_select,自动选择化学制剂成型机配方
+option_close_chem_finisher_selector,选择配方后关闭化学制剂成型机的配方选择器
+section_liquid_handling,液体操作
+section_machines,机器

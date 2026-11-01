@@ -1,0 +1,7 @@
+option_scroll_to_pour,Desplázate hacia abajo para verter
+option_pipette_draw,Desplázate hacia arriba para aspirar con la pipeta
+option_heating_plate_auto_off,Apagar la placa calefactora al introducir un recipiente
+option_chem_finisher_auto_select,Seleccionar automáticamente la receta de Chem Finisher
+option_close_chem_finisher_selector,Cerrar el selector de recetas de Chem Finisher después de elegir
+section_liquid_handling,Manejo de líquidos
+section_machines,Máquinas

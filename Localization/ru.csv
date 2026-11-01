@@ -1,0 +1,7 @@
+option_scroll_to_pour,Прокрутите вниз чтобы налить
+option_pipette_draw,Прокрутите вверх чтобы набрать жидкость пипеткой
+option_heating_plate_auto_off,Выключать термоплиту при установке ёмкости
+option_chem_finisher_auto_select,Автоматически выбирать рецепт Chem Finisher
+option_close_chem_finisher_selector,Закрывать список рецептов Chem Finisher после выбора
+section_liquid_handling,Работа с жидкостями
+section_machines,Оборудование
