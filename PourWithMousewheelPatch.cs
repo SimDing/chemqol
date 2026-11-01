@@ -3,7 +3,7 @@ using HarmonyLib;
 using UnityEngine;
 
 [HarmonyPatch(typeof(ItemSelectHandler), "OnEventUpdate")]
-internal static class PourWhileSelectedPatch
+internal static class PourWithMousewheelPatch
 {
     /*
      * The smallest container in the game is 1 ml, but we can create smaller amounts by producing birth-control pills of 0.1 ml each.
