@@ -32,6 +32,11 @@ internal static class PourWhileSelectedPatch
             return;
         }
 
+        if (isDrawing ? !ChemQOLConfig.PipetteDrawWhileSelected : !ChemQOLConfig.PourWhileSelected)
+        {
+            return;
+        }
+
         if (___currentItem == null || (___currentItem is GameItemElement selectedElement && selectedElement.IsDestroyed()))
         {
             Debug.Log("[ChemQOL Pour] Ignored: no live item is selected.");

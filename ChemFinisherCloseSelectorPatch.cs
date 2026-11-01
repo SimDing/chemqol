@@ -5,6 +5,9 @@ internal static class ChemFinisherCloseSelectorPatch
 {
     private static void Postfix()
     {
-        ChemFinisherUIManager.Instance.HideUI();
+        if (ChemQOLConfig.CloseChemFinisherSelector)
+        {
+            ChemFinisherUIManager.Instance.HideUI();
+        }
     }
 }

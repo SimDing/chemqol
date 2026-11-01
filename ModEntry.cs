@@ -5,6 +5,7 @@ public class ModEntry : IMod
     public void Init(ModManifest manifest)
     {
         log = new ModLog(manifest);
+        ChemQOLConfig.Initialize(manifest.ID);
         log.Log("ChemQOL initialized.");
     }
 

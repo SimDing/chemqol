@@ -5,7 +5,7 @@ internal static class HeatingPlateAutoOffPatch
 {
     private static void Postfix(GameSlotInventory __instance, GameItem item, bool __result)
     {
-        if (!__result || item == null || !item.IsTag("LIQUID_CONTAINER_TAG"))
+        if (!ChemQOLConfig.HeatingPlateAutoOff || !__result || item == null || !item.IsTag("LIQUID_CONTAINER_TAG"))
         {
             return;
         }
