@@ -17,7 +17,7 @@ internal static class PourWithMousewheelPatch
         Vector2 scrollDelta = Input.mouseScrollDelta;
         if (scrollDelta.sqrMagnitude > 0f)
         {
-            ModEntry.Logger.Log($"Pour: selection scroll delta=({scrollDelta.x}, {scrollDelta.y}), source={Describe(___currentItem)}");
+            DebugLog($"Pour: selection scroll delta=({scrollDelta.x}, {scrollDelta.y}), source={Describe(___currentItem)}");
         }
 
         if (scrollDelta.sqrMagnitude <= 0f)
@@ -39,7 +39,7 @@ internal static class PourWithMousewheelPatch
 
         if (___currentItem == null || (___currentItem is GameItemElement selectedElement && selectedElement.IsDestroyed()))
         {
-            ModEntry.Logger.Log("Pour ignored: no live item is selected.");
+            DebugLog("Pour ignored: no live item is selected.");
             return;
         }
 
@@ -47,20 +47,20 @@ internal static class PourWithMousewheelPatch
         bool sourceIsPipette = source.IsTag("LIQUID_CONTAINER_DROPPER_TAG");
         if (isDrawing && !sourceIsPipette)
         {
-            ModEntry.Logger.Log("Pour ignored on wheel-up: selected item is not a pipette.");
+            DebugLog("Pour ignored on wheel-up: selected item is not a pipette.");
             return;
         }
 
         GameItem target = RenderHandler.RaycastElement<GameItem>(Input.mousePosition);
         if (target == null)
         {
-            ModEntry.Logger.Log("Pour ignored: no target item under the cursor.");
+            DebugLog("Pour ignored: no target item under the cursor.");
             return;
         }
 
         if (target == source)
         {
-            ModEntry.Logger.Log("Pour ignored: cursor is over the selected source item.");
+            DebugLog("Pour ignored: cursor is over the selected source item.");
             return;
         }
 
@@ -68,21 +68,21 @@ internal static class PourWithMousewheelPatch
         bool targetIsLiquidContainer = target.IsTag("LIQUID_CONTAINER_TAG");
         bool mayTarget = source.MayTarget(target);
         bool canTarget = source.CanTarget(target);
-        ModEntry.Logger.Log($"Pour candidate: mode={(isDrawing ? "draw" : "pour")}; pipette={sourceIsPipette}; source={Describe(source)} liquidContainer={sourceIsLiquidContainer}; target={Describe(target)} liquidContainer={targetIsLiquidContainer}; mayTarget={mayTarget}; canTarget={canTarget}.");
+        DebugLog($"Pour candidate: mode={(isDrawing ? "draw" : "pour")}; pipette={sourceIsPipette}; source={Describe(source)} liquidContainer={sourceIsLiquidContainer}; target={Describe(target)} liquidContainer={targetIsLiquidContainer}; mayTarget={mayTarget}; canTarget={canTarget}.");
 
         if (!sourceIsLiquidContainer || !targetIsLiquidContainer || !mayTarget || !canTarget)
         {
-            ModEntry.Logger.Log("Pour ignored: source and target must be compatible liquid containers.");
+            DebugLog("Pour ignored: source and target must be compatible liquid containers.");
             return;
         }
 
         int selectedCapacity = WaterHelper.GetTotalCapacity(source);
         int receiverFreeCapacity = WaterHelper.GetFreeCapacity(isDrawing ? source : target);
         int amountToPour = Math.Min((selectedCapacity + PourFractionInverse - 1) / PourFractionInverse, receiverFreeCapacity);
-        ModEntry.Logger.Log($"Pour volumes: selectedCapacity={selectedCapacity}, receiverFree={receiverFreeCapacity}, requestedTransfer={amountToPour}.");
+        DebugLog($"Pour volumes: selectedCapacity={selectedCapacity}, receiverFree={receiverFreeCapacity}, requestedTransfer={amountToPour}.");
         if (amountToPour <= 0)
         {
-            ModEntry.Logger.Log("Pour skipped: source is empty or target is full.");
+            DebugLog("Pour skipped: source is empty or target is full.");
             return;
         }
 
@@ -95,7 +95,7 @@ internal static class PourWithMousewheelPatch
 
         try
         {
-            ModEntry.Logger.Log($"Pour: created staging container '{stagingContainer.identifier}' with capacity {amountToPour}.");
+            DebugLog($"Pour: created staging container '{stagingContainer.identifier}' with capacity {amountToPour}.");
             stagingContainer.ModifyTag("LIQUID_CONTAINER_CAPACITY", state =>
             {
                 state.Enable().SetInt(amountToPour);
@@ -111,13 +111,13 @@ internal static class PourWithMousewheelPatch
 
             GameItem transferSource = isDrawing ? target : source;
             GameItem transferReceiver = isDrawing ? source : target;
-            ModEntry.Logger.Log($"Pour: transferring {Describe(transferSource)} to staging container.");
+            DebugLog($"Pour: transferring {Describe(transferSource)} to staging container.");
             WaterHelper.TransferLiquid(transferSource, stagingContainer);
-            ModEntry.Logger.Log($"Pour: first transfer complete; source={WaterHelper.GetTotalVolume(source)}, staged={WaterHelper.GetTotalVolume(stagingContainer)}.");
+            DebugLog($"Pour: first transfer complete; source={WaterHelper.GetTotalVolume(source)}, staged={WaterHelper.GetTotalVolume(stagingContainer)}.");
 
-            ModEntry.Logger.Log($"Pour: transferring staging container to {Describe(transferReceiver)}.");
+            DebugLog($"Pour: transferring staging container to {Describe(transferReceiver)}.");
             WaterHelper.TransferLiquid(stagingContainer, transferReceiver);
-            ModEntry.Logger.Log($"{(isDrawing ? "Draw" : "Pour")} complete: staged={WaterHelper.GetTotalVolume(stagingContainer)}, receiver={WaterHelper.GetTotalVolume(transferReceiver)}.");
+            DebugLog($"{(isDrawing ? "Draw" : "Pour")} complete: staged={WaterHelper.GetTotalVolume(stagingContainer)}, receiver={WaterHelper.GetTotalVolume(transferReceiver)}.");
 
             WaterHelper.UpdateWaterBottleSound(source);
             WaterHelper.UpdateWaterBottleSound(target);
@@ -136,7 +136,7 @@ internal static class PourWithMousewheelPatch
 
             if (!isDrawing && WaterHelper.IsEmpty(source))
             {
-                ModEntry.Logger.Log("Pour: source is empty; ending item selection.");
+                DebugLog("Pour: source is empty; ending item selection.");
                 ItemSelectHandler.current?.EndSelect();
             }
         }
@@ -146,10 +146,15 @@ internal static class PourWithMousewheelPatch
         }
         finally
         {
-            ModEntry.Logger.Log("Pour: destroying staging container.");
+            DebugLog("Pour: destroying staging container.");
             stagingContainer.Destroy();
         }
 
+    }
+
+    private static void DebugLog(string message)
+    {
+        ModEntry.DebugLog(message);
     }
 
     private static string Describe(GameItem item)

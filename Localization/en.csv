@@ -5,3 +5,5 @@ option_chem_finisher_auto_select,Auto-select Chem Finisher recipe
 option_close_chem_finisher_selector,Close Chem Finisher recipe selector after selection
 section_liquid_handling,Liquid Handling
 section_machines,Machines
+option_debug_logging,Enable verbose debug logging for ChemQOL
+section_debug,Debug

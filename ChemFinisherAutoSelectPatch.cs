@@ -21,7 +21,7 @@ internal static class ChemFinisherAutoSelectPatch
         if (bestRecipe == null)
         {
             machine.DisableTag(MachineChemFinisher.SELECTED_CHEM_ID_TAG);
-            ModEntry.Logger.Log("Chem finisher found no output matching the input container.");
+            ModEntry.DebugLog("Chem finisher found no output matching the input container.");
             return;
         }
 
@@ -29,7 +29,7 @@ internal static class ChemFinisherAutoSelectPatch
         {
             state.Enable().SetString(bestRecipe.identifier);
         });
-        ModEntry.Logger.Log($"Chem finisher selected '{bestRecipe.identifier}' from input ingredient volume {bestIngredientAmount}.");
+        ModEntry.DebugLog($"Chem finisher selected '{bestRecipe.identifier}' from input ingredient volume {bestIngredientAmount}.");
     }
 
     private static ChemFinisherRecipe FindBestRecipe(GameItem item, out int bestIngredientAmount)

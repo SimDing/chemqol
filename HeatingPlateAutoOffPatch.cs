@@ -26,6 +26,6 @@ internal static class HeatingPlateAutoOffPatch
         {
             tag.Enable().SetInt(0);
         });
-        ModEntry.Logger.Log("Heating plate switched off after a liquid container was added.");
+        ModEntry.DebugLog("Heating plate switched off after a liquid container was added.");
     }
 }
