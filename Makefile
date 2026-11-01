@@ -37,7 +37,7 @@ check-game:
 	  printf 'Game assemblies not found under: %s\nSet GAME_DIR to the game install folder.\n' "$(MANAGED_DIR)" >&2; \
 	  exit 1; \
 	}
-	@for assembly in UnityEngine.dll UnityEngine.CoreModule.dll 0Harmony.dll; do \
+	@for assembly in UnityEngine.dll UnityEngine.CoreModule.dll UnityEngine.InputLegacyModule.dll 0Harmony.dll; do \
 	  test -f "$(MANAGED_DIR)/$$assembly" || { \
 	    printf 'Required game assembly missing: %s/%s\n' "$(MANAGED_DIR)" "$$assembly" >&2; \
 	    exit 1; \
