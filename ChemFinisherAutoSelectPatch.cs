@@ -21,11 +21,6 @@ internal static class ChemFinisherAutoSelectPatch
 
         foreach (ChemFinisherRecipe recipe in ChemFinisherRecipe.chemFinisherRecipes)
         {
-            if (!recipe.CanOutput(item))
-            {
-                continue;
-            }
-
             int ingredientAmount = item.GetTagReadonly(Liquid.GetCurrentPartFromId(recipe.activeIngredientId)).GetInt();
             if (ingredientAmount > bestIngredientAmount)
             {
