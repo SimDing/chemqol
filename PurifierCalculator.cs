@@ -17,17 +17,27 @@ internal sealed class PurifierCalculatorResult
 internal static class PurifierCalculator
 {
     private const int MinPurity = 8000;
-    private const int MaxPurity = 10000;
     private const int PointCount = 185;
     private const long MaxContainerVolume = int.MaxValue;
+    private const double MachineMaximumDisplayTolerance = 0.02;
 
-    internal static readonly int[] TargetPurities = { 9800, 9900, 9990 };
+    internal static readonly int[] TargetPurities = { 9990, 9900, 9800, 9600, 9000 };
 
     public static PurifierCalculatorResult Calculate(PurifierCalculatorInput input)
     {
         int machineMaximum = MachinePurifier.GetMaxPurityCap(input.Quality);
-        var purities = new List<int>(TargetPurities);
-        if (!purities.Contains(machineMaximum))
+        var purities = new List<int>();
+        foreach (int target in TargetPurities)
+        {
+            if (target <= machineMaximum)
+            {
+                purities.Add(target);
+            }
+        }
+
+        bool hasNearbyTarget = purities.Exists(target =>
+            Math.Abs(machineMaximum / 100.0 - target / 100.0) <= MachineMaximumDisplayTolerance);
+        if (!hasNearbyTarget)
         {
             purities.Add(machineMaximum);
         }
@@ -35,7 +45,7 @@ internal static class PurifierCalculator
         var xValues = new int[PointCount];
         for (int point = 0; point < PointCount; point++)
         {
-            xValues[point] = MinPurity + (MaxPurity - MinPurity) * point / (PointCount - 1);
+            xValues[point] = MinPurity + (machineMaximum - MinPurity) * point / (PointCount - 1);
         }
 
         int[] targetPurities = purities.ToArray();
