@@ -26,13 +26,8 @@ internal sealed class PurifierCapacityGraph : PixelElement
     private const int PlotWidth = 184;
     private const int PlotHeight = 66;
     private const int PointCount = PlotWidth + 1;
-    private const int MinPurity = 8000;
-    private const int MaxPurity = 10000;
     private const double MinimumFloorLiters = 0.1;
     private const double MaxLiters = 6.0;
-    private const long MaxContainerVolume = int.MaxValue;
-
-    private static readonly int[] TargetPurities = { 9800, 9900, 9990 };
     private static readonly Color[] SeriesColors =
     {
         MachineryStyle.Hex("9cdb73"),
@@ -122,39 +117,32 @@ internal sealed class PurifierCapacityGraph : PixelElement
     private void Draw(int performance, int quality)
     {
         int machineMaximum = MachinePurifier.GetMaxPurityCap(quality);
-        var targets = new List<int>(TargetPurities);
-        if (!targets.Contains(machineMaximum))
+        var calculation = PurifierCalculator.Calculate(new PurifierCalculatorInput
         {
-            targets.Add(machineMaximum);
-        }
-
-        var values = new List<double[]>(targets.Count);
+            Quality = quality,
+            Performance = performance
+        });
+        int[] xValues = calculation.XValues;
+        double[][] values = calculation.YValues;
+        int[] purities = calculation.Purities;
         for (int i = 0; i < legendLabels.Length; i++)
         {
-            legendLabels[i].handler.gameObject.SetActive(i < targets.Count);
-            legendMarkers[i].gameObject.SetActive(i < targets.Count);
+            legendLabels[i].handler.gameObject.SetActive(i < purities.Length);
+            legendMarkers[i].gameObject.SetActive(i < purities.Length);
         }
 
         double minimumLiters = double.PositiveInfinity;
-        for (int series = 0; series < targets.Count; series++)
+        for (int series = 0; series < purities.Length; series++)
         {
-            var capacities = new double[PointCount];
-            for (int point = 0; point < PointCount; point++)
+            for (int point = 0; point < values[series].Length; point++)
             {
-                int inputPurity = MinPurity + (MaxPurity - MinPurity) * point / (PointCount - 1);
-                if (targets[series] <= machineMaximum && inputPurity < targets[series])
+                if (!double.IsNaN(values[series][point]))
                 {
-                    capacities[point] = MaxVolumeForTarget(inputPurity, targets[series], performance) / 1000000.0;
-                    minimumLiters = Math.Min(minimumLiters, Math.Max(MinimumFloorLiters, capacities[point]));
-                }
-                else
-                {
-                    capacities[point] = double.NaN;
+                    minimumLiters = Math.Min(minimumLiters, Math.Max(MinimumFloorLiters, values[series][point]));
                 }
             }
-            values.Add(capacities);
-            bool isDistinctMachineMaximum = targets[series] == machineMaximum && Array.IndexOf(TargetPurities, machineMaximum) < 0;
-            UpdateLegend(series, targets[series], targets[series] > machineMaximum, isDistinctMachineMaximum);
+            bool isDistinctMachineMaximum = purities[series] == machineMaximum && Array.IndexOf(PurifierCalculator.TargetPurities, machineMaximum) < 0;
+            UpdateLegend(series, purities[series], purities[series] > machineMaximum, isDistinctMachineMaximum);
         }
 
         if (double.IsInfinity(minimumLiters) || minimumLiters >= MaxLiters)
@@ -181,10 +169,10 @@ internal sealed class PurifierCapacityGraph : PixelElement
         int segmentIndex = 0;
         for (int series = 0; series < 4; series++)
         {
-            for (int point = 0; point < PointCount - 1; point++)
+            for (int point = 0; point < xValues.Length - 1; point++)
             {
                 TreeNodeRender segment = lineSegments[segmentIndex++];
-                if (series >= values.Count)
+                if (series >= values.Length)
                 {
                     segment.image.enabled = false;
                     continue;
@@ -197,8 +185,9 @@ internal sealed class PurifierCapacityGraph : PixelElement
                     continue;
                 }
 
-                float x1 = (float)PlotWidth * point / (PointCount - 1);
-                float x2 = (float)PlotWidth * (point + 1) / (PointCount - 1);
+                float xRange = xValues[xValues.Length - 1] - xValues[0];
+                float x1 = (float)PlotWidth * (xValues[point] - xValues[0]) / xRange;
+                float x2 = (float)PlotWidth * (xValues[point + 1] - xValues[0]) / xRange;
                 float y1 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point]) / minimumLiters) / logYRange * PlotHeight);
                 float y2 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point + 1]) / minimumLiters) / logYRange * PlotHeight);
                 segment.image.color = SeriesColors[series];
@@ -206,29 +195,6 @@ internal sealed class PurifierCapacityGraph : PixelElement
                 PlaceSegment(segment, x1, y1, x2, y2);
             }
         }
-    }
-
-    private long MaxVolumeForTarget(int inputPurity, int targetPurity, int performance)
-    {
-        double multiplier = (MachinePurifier.GetDirtBonus(inputPurity) + performance / 100.0) * 1.25;
-        long low = 0;
-        long high = MaxContainerVolume;
-        while (low < high)
-        {
-            long middle = low + (high - low + 1) / 2;
-            long requiredRemoval = (middle * (targetPurity - inputPurity) + 9999) / 10000;
-            long budgetVolume = Math.Min(middle, 10000000L);
-            long budget = (long)((budgetVolume * 3 / 1000 + 25000) * multiplier);
-            if (requiredRemoval <= budget)
-            {
-                low = middle;
-            }
-            else
-            {
-                high = middle - 1;
-            }
-        }
-        return low;
     }
 
     private void PlaceSegment(TreeNodeRender node, float x1, float y1, float x2, float y2)
