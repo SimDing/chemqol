@@ -5,6 +5,7 @@ internal sealed class PurifierCapacityGraphController
     private readonly PurifierCreatePlotDetailInteractor createPlotDetailInteractor;
 
     private PurifierMachineState lastState;
+    private bool hasObservedState;
 
     public PurifierCapacityGraphController(
         IPurifierMachineStateProvider machineStateProvider,
@@ -19,9 +20,10 @@ internal sealed class PurifierCapacityGraphController
     public void Refresh()
     {
         PurifierMachineState state = machineStateProvider.ReadCurrent();
-        if (!state.Equals(lastState))
+        if (!hasObservedState || !state.Equals(lastState))
         {
             lastState = state;
+            hasObservedState = true;
             createPlotInteractor.TryRefresh(state);
         }
     }
