@@ -134,75 +134,40 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
 
 internal sealed class PurifierDetailPresenter : IPurifierPlotDetailOutput
 {
-    private PurifierGraphViewModel currentGraphViewModel;
-    private float normalizedX = float.NaN;
-    private int currentXValue;
-    private string[] currentLines;
-    private bool hasCurrent;
-
     public event Action<PurifierPlotDetailViewModel> DetailChanged;
 
-    public PurifierDetailPresenter(IPurifierPlotOutput plotOutput)
+    public void Present(PurifierDetailCalculationResult calculation)
     {
-        plotOutput.ViewModelChanged += HandlePlotViewModelChanged;
-    }
-
-    public void TryPresent(float normalizedX)
-    {
-        this.normalizedX = normalizedX;
-        TryUpdateDetail();
-    }
-
-    private void TryUpdateDetail()
-    {
-        if (currentGraphViewModel == null || currentGraphViewModel.XValues == null || currentGraphViewModel.XValues.Length == 0 || float.IsNaN(normalizedX))
+        var detailLines = new List<string>(calculation.Purities.Length + 1)
         {
-            hasCurrent = false;
-            currentXValue = 0;
-            currentLines = Array.Empty<string>();
-            invokeDetailChanged();
-            return;
-        }
-
-        double clamped = Math.Max(0.0, Math.Min(1.0, normalizedX));
-        int point = (int)Math.Round(clamped * (currentGraphViewModel.XValues.Length - 1), MidpointRounding.AwayFromZero);
-
-        var detailLines = new List<string>(currentGraphViewModel.Purities.Length + 1)
-        {
-            "Input " + (currentGraphViewModel.XValues[point] / 100.0).ToString("0.##") + "%"
+            "Input " + (calculation.InputPurity / 100.0).ToString("0.##") + "%"
         };
 
-        for (int series = 0; series < currentGraphViewModel.Purities.Length; series++)
+        for (int series = 0; series < calculation.Purities.Length; series++)
         {
-            double capacity = currentGraphViewModel.YValues[series][point];
+            double capacity = calculation.Capacities[series];
             if (!double.IsNaN(capacity))
             {
-                detailLines.Add((currentGraphViewModel.Purities[series] / 100.0).ToString("0.##") + "% " + FormatReadingLiters(capacity) + "L");
+                detailLines.Add((calculation.Purities[series] / 100.0).ToString("0.##") + "% " + FormatReadingLiters(capacity) + "L");
             }
         }
 
-        currentXValue = currentGraphViewModel.XValues[point];
-        currentLines = detailLines.ToArray();
-        hasCurrent = true;
-        invokeDetailChanged();
+        DetailChanged?.Invoke(new PurifierPlotDetailViewModel
+        {
+            XValue = calculation.InputPurity,
+            Lines = detailLines.ToArray(),
+            IsVisible = true
+        });
     }
 
     public void Clear()
     {
-        hasCurrent = false;
-        currentXValue = 0;
-        currentLines = Array.Empty<string>();
-        normalizedX = float.NaN;
-        invokeDetailChanged();
-    }
-
-    private void HandlePlotViewModelChanged(PurifierGraphViewModel viewModel)
-    {
-        currentGraphViewModel = viewModel;
-        hasCurrent = false;
-        currentXValue = 0;
-        currentLines = Array.Empty<string>();
-        TryUpdateDetail();
+        DetailChanged?.Invoke(new PurifierPlotDetailViewModel
+        {
+            XValue = 0,
+            Lines = Array.Empty<string>(),
+            IsVisible = false
+        });
     }
 
     private static string FormatReadingLiters(double liters)
@@ -219,13 +184,4 @@ internal sealed class PurifierDetailPresenter : IPurifierPlotDetailOutput
         return roundedDown.ToString("G");
     }
 
-    private void invokeDetailChanged()
-    {
-        DetailChanged?.Invoke(new PurifierPlotDetailViewModel
-        {
-            XValue = currentXValue,
-            Lines = currentLines,
-            IsVisible = hasCurrent
-        });
-    }
 }

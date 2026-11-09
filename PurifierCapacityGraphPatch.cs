@@ -13,11 +13,13 @@ internal static class PurifierCapacityGraphPatch
         if (__result?.contentWindow?.childElement is MachineryPanelRow row)
         {
             var plotOutput = new PurifierCapacityGraphPresenter();
-            var detailOutput = new PurifierDetailPresenter(plotOutput);
+            var detailOutput = new PurifierDetailPresenter();
             var plotInteractor = new PurifierCreatePlotInteractor(
                 new MachinePurifierMathAdapter(),
                 plotOutput);
-            var detailInteractor = new PurifierCreatePlotDetailInteractor(detailOutput);
+            var detailInteractor = new PurifierCreatePlotDetailInteractor(
+                new MachinePurifierMathAdapter(),
+                detailOutput);
             var controller = new PurifierCapacityGraphController(
                 new GamePurifierMachineStateProvider(__result),
                 plotInteractor,
@@ -262,7 +264,10 @@ internal sealed class PurifierCapacityGraph : PixelElement
         }
 
         float fraction = Mathf.Clamp01(plotPosition.x);
-        controller.UpdateHoverDetail(fraction);
+        int minimumPurity = currentViewModel.XValues[0];
+        int maximumPurity = currentViewModel.XValues[currentViewModel.XValues.Length - 1];
+        int mouseoverPurity = minimumPurity + Mathf.RoundToInt(fraction * (maximumPurity - minimumPurity));
+        controller.UpdateHoverDetail(mouseoverPurity);
     }
 
     public void HandleDetailChanged(PurifierPlotDetailViewModel viewModel)

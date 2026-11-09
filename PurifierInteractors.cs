@@ -30,20 +30,32 @@ internal sealed class PurifierCreatePlotInteractor
 
 internal sealed class PurifierCreatePlotDetailInteractor
 {
+    private readonly IPurifierMath purifierMath;
     private readonly IPurifierPlotDetailOutput output;
 
-    public PurifierCreatePlotDetailInteractor(IPurifierPlotDetailOutput output)
+    public PurifierCreatePlotDetailInteractor(IPurifierMath purifierMath, IPurifierPlotDetailOutput output)
     {
+        this.purifierMath = purifierMath;
         this.output = output;
     }
 
-    public void TryCreate(float normalizedX)
+    public void TryCreate(PurifierMachineState state, int? mouseoverPurity)
     {
-        output.TryPresent(normalizedX);
-    }
+        if (!mouseoverPurity.HasValue)
+        {
+            output.Clear();
+            return;
+        }
 
-    public void Clear()
-    {
-        output.Clear();
+        PurifierDetailCalculationResult result = PurifierCalculator.CalculateDetail(
+            new PurifierCalculatorInput
+            {
+                Quality = state.Quality,
+                Performance = state.Performance
+            },
+            mouseoverPurity.Value,
+            purifierMath);
+
+        output.Present(result);
     }
 }

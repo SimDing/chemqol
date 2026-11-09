@@ -28,6 +28,6 @@ internal interface IPurifierPlotDetailOutput
 {
     event Action<PurifierPlotDetailViewModel> DetailChanged;
 
-    void TryPresent(float normalizedX);
+    void Present(PurifierDetailCalculationResult calculation);
     void Clear();
 }

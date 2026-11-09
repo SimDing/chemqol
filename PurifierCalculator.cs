@@ -20,6 +20,13 @@ internal sealed class PurifierCalculatorResult
     public int[] Purities { get; set; }
 }
 
+internal sealed class PurifierDetailCalculationResult
+{
+    public int InputPurity { get; set; }
+    public int[] Purities { get; set; }
+    public double[] Capacities { get; set; }
+}
+
 internal static class PurifierCalculator
 {
     private const int MinPurity = 8000;
@@ -42,21 +49,7 @@ internal static class PurifierCalculator
         }
 
         int machineMaximum = purifierMath.GetMaxPurityCap(input.Quality);
-        var purities = new List<int>();
-        foreach (int target in TargetPurities)
-        {
-            if (target <= machineMaximum)
-            {
-                purities.Add(target);
-            }
-        }
-
-        bool hasNearbyTarget = purities.Exists(target =>
-            Math.Abs(machineMaximum / 100.0 - target / 100.0) <= MachineMaximumDisplayTolerance);
-        if (!hasNearbyTarget)
-        {
-            purities.Add(machineMaximum);
-        }
+        int[] targetPurities = GetTargetPurities(machineMaximum);
 
         var xValues = new int[PointCount];
         for (int point = 0; point < PointCount; point++)
@@ -64,7 +57,6 @@ internal static class PurifierCalculator
             xValues[point] = MinPurity + (machineMaximum - MinPurity) * point / (PointCount - 1);
         }
 
-        int[] targetPurities = purities.ToArray();
         var yValues = new double[targetPurities.Length][];
         for (int series = 0; series < targetPurities.Length; series++)
         {
@@ -72,7 +64,7 @@ internal static class PurifierCalculator
             for (int point = 0; point < PointCount; point++)
             {
                 int inputPurity = xValues[point];
-                if (targetPurities[series] <= machineMaximum && inputPurity < targetPurities[series])
+                if (inputPurity < targetPurities[series])
                 {
                     yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance, purifierMath) / 1000000.0;
                 }
@@ -89,6 +81,58 @@ internal static class PurifierCalculator
             YValues = yValues,
             Purities = targetPurities
         };
+    }
+
+    public static PurifierDetailCalculationResult CalculateDetail(
+        PurifierCalculatorInput input,
+        int inputPurity,
+        IPurifierMath purifierMath)
+    {
+        if (input == null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        if (purifierMath == null)
+        {
+            throw new ArgumentNullException(nameof(purifierMath));
+        }
+
+        int[] purities = GetTargetPurities(purifierMath.GetMaxPurityCap(input.Quality));
+        var capacities = new double[purities.Length];
+        for (int series = 0; series < purities.Length; series++)
+        {
+            capacities[series] = inputPurity < purities[series]
+                ? MaxVolumeForTarget(inputPurity, purities[series], input.Performance, purifierMath) / 1000000.0
+                : double.NaN;
+        }
+
+        return new PurifierDetailCalculationResult
+        {
+            InputPurity = inputPurity,
+            Purities = purities,
+            Capacities = capacities
+        };
+    }
+
+    private static int[] GetTargetPurities(int machineMaximum)
+    {
+        var purities = new List<int>();
+        foreach (int target in TargetPurities)
+        {
+            if (target <= machineMaximum)
+            {
+                purities.Add(target);
+            }
+        }
+
+        bool hasNearbyTarget = purities.Exists(target =>
+            Math.Abs(machineMaximum / 100.0 - target / 100.0) <= MachineMaximumDisplayTolerance);
+        if (!hasNearbyTarget)
+        {
+            purities.Add(machineMaximum);
+        }
+        return purities.ToArray();
     }
 
     private static long MaxVolumeForTarget(int inputPurity, int targetPurity, int performance, IPurifierMath purifierMath)

@@ -28,13 +28,13 @@ internal sealed class PurifierCapacityGraphController
         }
     }
 
-    public void UpdateHoverDetail(float normalizedX)
+    public void UpdateHoverDetail(int? mouseoverPurity)
     {
-        createPlotDetailInteractor.TryCreate(normalizedX);
+        createPlotDetailInteractor.TryCreate(lastState, mouseoverPurity);
     }
 
     public void OnPointerPlotExit()
     {
-        createPlotDetailInteractor.Clear();
+        UpdateHoverDetail(null);
     }
 }
