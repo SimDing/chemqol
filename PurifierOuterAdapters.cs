@@ -10,8 +10,8 @@ internal sealed class GamePurifierMachineStateProvider : IPurifierMachineStatePr
     public PurifierMachineState ReadCurrent()
     {
         return new PurifierMachineState(
-            MachineryHelper.GetCurrentPerformanceBonus(machine),
-            MachineryHelper.GetCurrentQualityBonus(machine)
+            MachineryHelper.GetCurrentQualityBonus(machine),
+            MachineryHelper.GetCurrentPerformanceBonus(machine)
         );
     }
 }

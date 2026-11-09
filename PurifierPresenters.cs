@@ -30,8 +30,8 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
             GridLevels = BuildGridLevels(minimumLiters),
             MinimumLiters = minimumLiters,
             MaximumLiters = MaximumLiters,
-            MaximumLitersLabel = FormatLiters(MaximumLiters) + "L",
-            MinimumLitersLabel = FormatLiters(minimumLiters) + "L"
+            MaximumLitersLabel = FormatLiters(MaximumLiters),
+            MinimumLitersLabel = FormatLiters(minimumLiters)
         };
 
         ViewModelChanged?.Invoke(currentViewModel);
@@ -128,7 +128,7 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
 
     private static string FormatLiters(double liters)
     {
-        return liters.ToString(liters < 1.0 ? "0.###" : "0.##");
+        return liters.ToString(liters < 1.0 ? "0.###" : "0.##")  + "L";
     }
 }
 
@@ -192,6 +192,7 @@ internal sealed class PurifierDetailPresenter : IPurifierPlotDetailOutput
         hasCurrent = false;
         currentXValue = 0;
         currentLines = Array.Empty<string>();
+        normalizedX = float.NaN;
         invokeDetailChanged();
     }
 
