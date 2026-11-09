@@ -4,11 +4,13 @@ internal readonly struct PurifierMachineState
 {
     public int Quality { get; }
     public int Performance { get; }
+    public int? ContainerWaterPurity { get; }
     
-    public PurifierMachineState(int quality, int performance)
+    public PurifierMachineState(int quality, int performance, int? containerWaterPurity)
     {
         Quality = quality;
         Performance = performance;
+        ContainerWaterPurity = containerWaterPurity;
     }
 }
 

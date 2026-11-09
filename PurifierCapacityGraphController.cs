@@ -25,6 +25,7 @@ internal sealed class PurifierCapacityGraphController
             lastState = state;
             hasObservedState = true;
             createPlotInteractor.TryRefresh(state);
+            UpdateHoverDetail(null);
         }
     }
 

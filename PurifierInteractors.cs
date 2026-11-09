@@ -41,7 +41,9 @@ internal sealed class PurifierCreatePlotDetailInteractor
 
     public void TryCreate(PurifierMachineState state, int? mouseoverPurity)
     {
-        if (!mouseoverPurity.HasValue)
+        int? readoutPurity = mouseoverPurity ?? state.ContainerWaterPurity;
+        
+        if (!readoutPurity.HasValue)
         {
             output.Clear();
             return;
@@ -53,7 +55,7 @@ internal sealed class PurifierCreatePlotDetailInteractor
                 Quality = state.Quality,
                 Performance = state.Performance
             },
-            mouseoverPurity.Value,
+            readoutPurity.Value,
             purifierMath);
 
         output.Present(result);

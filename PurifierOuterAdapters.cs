@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 internal sealed class GamePurifierMachineStateProvider : IPurifierMachineStateProvider
 {
     private readonly GameItem machine;
@@ -9,9 +11,19 @@ internal sealed class GamePurifierMachineStateProvider : IPurifierMachineStatePr
 
     public PurifierMachineState ReadCurrent()
     {
+        List<GameSlotInventory> waterContainerSlots = GraphUtils.FindChildrenType<GameSlotInventory>(
+            machine,
+            slot => slot.childItem != null
+                && slot.childItem.IsTag("LIQUID_CONTAINER_TAG")
+                && slot.childItem.GetTagReadonly(Liquid.GetCurrentPartFromId("water")).GetInt() > 0);
+        int? containerWaterPurity = waterContainerSlots.Count > 0
+            ? WaterHelper.GetWaterPurity(waterContainerSlots[0].childItem)
+            : (int?)null;
+
         return new PurifierMachineState(
             MachineryHelper.GetCurrentQualityBonus(machine),
-            MachineryHelper.GetCurrentPerformanceBonus(machine)
+            MachineryHelper.GetCurrentPerformanceBonus(machine),
+            containerWaterPurity
         );
     }
 }
