@@ -1,6 +1,12 @@
 using System;
 using System.Collections.Generic;
 
+internal interface IPurifierMath
+{
+    int GetMaxPurityCap(int quality);
+    double GetDirtBonus(int inputPurity);
+}
+
 internal sealed class PurifierCalculatorInput
 {
     public int Quality { get; set; }
@@ -23,9 +29,19 @@ internal static class PurifierCalculator
 
     internal static readonly int[] TargetPurities = { 9990, 9900, 9800, 9600, 9000 };
 
-    public static PurifierCalculatorResult Calculate(PurifierCalculatorInput input)
+    public static PurifierCalculatorResult Calculate(PurifierCalculatorInput input, IPurifierMath purifierMath)
     {
-        int machineMaximum = MachinePurifier.GetMaxPurityCap(input.Quality);
+        if (input == null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        if (purifierMath == null)
+        {
+            throw new ArgumentNullException(nameof(purifierMath));
+        }
+
+        int machineMaximum = purifierMath.GetMaxPurityCap(input.Quality);
         var purities = new List<int>();
         foreach (int target in TargetPurities)
         {
@@ -58,7 +74,7 @@ internal static class PurifierCalculator
                 int inputPurity = xValues[point];
                 if (targetPurities[series] <= machineMaximum && inputPurity < targetPurities[series])
                 {
-                    yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance) / 1000000.0;
+                    yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance, purifierMath) / 1000000.0;
                 }
                 else
                 {
@@ -75,9 +91,9 @@ internal static class PurifierCalculator
         };
     }
 
-    private static long MaxVolumeForTarget(int inputPurity, int targetPurity, int performance)
+    private static long MaxVolumeForTarget(int inputPurity, int targetPurity, int performance, IPurifierMath purifierMath)
     {
-        double multiplier = (MachinePurifier.GetDirtBonus(inputPurity) + performance / 100.0) * 1.25;
+        double multiplier = (purifierMath.GetDirtBonus(inputPurity) + performance / 100.0) * 1.25;
         long low = 0;
         long high = MaxContainerVolume;
         while (low < high)

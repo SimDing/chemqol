@@ -12,7 +12,17 @@ internal static class PurifierCapacityGraphPatch
     {
         if (__result?.contentWindow?.childElement is MachineryPanelRow row)
         {
-            var graph = new PurifierCapacityGraph(__result);
+            var plotOutput = new PurifierCapacityGraphPresenter();
+            var detailOutput = new PurifierDetailPresenter(plotOutput);
+            var plotInteractor = new PurifierCreatePlotInteractor(
+                new MachinePurifierMathAdapter(),
+                plotOutput);
+            var detailInteractor = new PurifierCreatePlotDetailInteractor(detailOutput);
+            var controller = new PurifierCapacityGraphController(
+                new GamePurifierMachineStateProvider(__result),
+                plotInteractor,
+                detailInteractor);
+            var graph = new PurifierCapacityGraph(controller, plotOutput, detailOutput);
             row.Add(new MachineryPanel("Purification capacity", graph, "purifier-capacity"));
         }
     }
@@ -30,8 +40,6 @@ internal sealed class PurifierCapacityGraph : PixelElement
     private const int TooltipWidth = 56;
     private const int TooltipLineHeight = 7;
     private const int TooltipPadding = 2;
-    private const double MinimumFloorLiters = 0.1;
-    private const double MaxLiters = 6.0;
     private const int SeriesCount = 6;
     private static readonly Color[] SeriesColors =
     {
@@ -43,7 +51,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
         MachineryStyle.Hex("78c9df")
     };
 
-    private readonly GameItem machine;
+    private readonly PurifierCapacityGraphController controller;
     private readonly TreeNodeRender plotViewport;
     private readonly TreeNodeRender[] lineSegments = new TreeNodeRender[SeriesCount * (PointCount - 1)];
     private readonly TreeNodeRender[] axes = new TreeNodeRender[8];
@@ -55,11 +63,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
     private readonly TreeNodeRender tooltipBackground;
     private readonly MachineryText tooltipText;
     private readonly Vector3[] cornerBuffer = new Vector3[4];
-    private int[] graphXValues;
-    private double[][] graphYValues;
-    private int[] graphPurities;
-    private int lastPerformance = int.MinValue;
-    private int lastQuality = int.MinValue;
+    private PurifierGraphViewModel currentViewModel;
 
     public bool canResize => false;
     public int widthPixels => Width;
@@ -68,9 +72,14 @@ internal sealed class PurifierCapacityGraph : PixelElement
     public RectTransform rectTransform => handler.rectTransform;
     public TreeNodeRender inner => handler;
 
-    public PurifierCapacityGraph(GameItem machine)
+    public PurifierCapacityGraph(
+        PurifierCapacityGraphController controller,
+        IPurifierPlotOutput plotOutput,
+        IPurifierPlotDetailOutput detailOutput)
     {
-        this.machine = machine;
+        this.controller = controller;
+        plotOutput.ViewModelChanged += HandleViewModelChanged;
+        detailOutput.DetailChanged += HandleDetailChanged;
         handler = TreeNodeRender.Instantiate(this, "PurifierCapacityGraph");
         plotViewport = TreeNodeRender.Instantiate().SetParent(handler);
         plotViewport.image.enabled = false;
@@ -134,86 +143,57 @@ internal sealed class PurifierCapacityGraph : PixelElement
 
     public void Validate()
     {
-        RefreshIfNeeded();
+        controller.Refresh();
     }
 
     internal void RefreshIfNeeded()
     {
-        int performance = MachineryHelper.GetCurrentPerformanceBonus(machine);
-        int quality = MachineryHelper.GetCurrentQualityBonus(machine);
-        if (performance == lastPerformance && quality == lastQuality)
-        {
-            return;
-        }
-
-        lastPerformance = performance;
-        lastQuality = quality;
-        Draw(performance, quality);
+        controller.Refresh();
     }
 
-    private void Draw(int performance, int quality)
+    public void HandleViewModelChanged(PurifierGraphViewModel viewModel)
     {
-        var calculation = PurifierCalculator.Calculate(new PurifierCalculatorInput
-        {
-            Quality = quality,
-            Performance = performance
-        });
-        graphXValues = calculation.XValues;
-        graphYValues = calculation.YValues;
-        graphPurities = calculation.Purities;
-        int[] xValues = graphXValues;
-        double[][] values = graphYValues;
-        int[] purities = graphPurities;
-        UpdateXAxisLabels(xValues[0], xValues[xValues.Length - 1]);
-        int[] legendPurities = (int[])purities.Clone();
-        Array.Sort(legendPurities);
+        currentViewModel = viewModel;
+        Draw(viewModel);
+    }
+
+    private void Draw(PurifierGraphViewModel viewModel)
+    {
+        int[] xValues = viewModel.XValues;
+        double[][] values = viewModel.YValues;
+        int[] purities = viewModel.Purities;
+        UpdateXAxisLabels(viewModel.XAxisTicks, xValues[0], xValues[xValues.Length - 1]);
         for (int i = 0; i < legendMarkers.Length; i++)
         {
-            bool hasSeries = i < legendPurities.Length;
-            legendMarkers[i].gameObject.SetActive(hasSeries);
-            legendPurityLabels[i].handler.gameObject.SetActive(hasSeries);
-            if (hasSeries)
+            PurifierLegendItemViewModel legendItem = viewModel.LegendItems[i];
+            legendMarkers[i].gameObject.SetActive(legendItem.IsVisible);
+            legendPurityLabels[i].handler.gameObject.SetActive(legendItem.IsVisible);
+            if (legendItem.IsVisible)
             {
-                legendMarkers[i].image.color = GetSeriesColor(legendPurities[i]);
-                legendPurityLabels[i].SetText((legendPurities[i] / 100.0).ToString("0.##") + "%");
+                legendMarkers[i].image.color = GetSeriesColor(legendItem.Purity);
+                legendPurityLabels[i].SetText(legendItem.Label);
             }
         }
 
-        double minimumLiters = double.PositiveInfinity;
-        for (int series = 0; series < purities.Length; series++)
-        {
-            for (int point = 0; point < values[series].Length; point++)
-            {
-                if (!double.IsNaN(values[series][point]))
-                {
-                    minimumLiters = Math.Min(minimumLiters, Math.Max(MinimumFloorLiters, values[series][point]));
-                }
-            }
-        }
-
-        if (double.IsInfinity(minimumLiters) || minimumLiters >= MaxLiters)
-        {
-            minimumLiters = MinimumFloorLiters;
-        }
-
-        double logYRange = Math.Log(MaxLiters / minimumLiters);
+        double minimumLiters = viewModel.MinimumLiters;
+        double maximumLiters = viewModel.MaximumLiters;
+        double logYRange = Math.Log(maximumLiters / minimumLiters);
 
         MachineryStyle.Place(axes[0], PlotLeft, PlotTop, 1, PlotHeight + 1);
         MachineryStyle.Place(axes[6], PlotLeft, PlotTop, PlotWidth + 1, 1);
         MachineryStyle.Place(axes[7], PlotLeft, PlotTop + PlotHeight, PlotWidth + 1, 1);
         axes[6].image.color = MachineryStyle.Hex("77776f", 0.35f);
         axes[7].image.color = MachineryStyle.Hex("77776f", 0.35f);
-        SetLabelText(12, "6L");
-        SetLabelText(13, FormatLiters(minimumLiters) + "L");
+        SetLabelText(12, viewModel.MaximumLitersLabel);
+        SetLabelText(13, viewModel.MinimumLitersLabel);
         MachineryStyle.Place(labels[12].handler, 0, PlotTop - 4, labels[12].widthPixels, labels[12].heightPixels);
         MachineryStyle.Place(labels[13].handler, 0, PlotTop + PlotHeight - 4, labels[13].widthPixels, labels[13].heightPixels);
-        double[] gridLevels = { 3.0, 2.0, 1.0, 0.75, 0.375 };
-        for (int i = 0; i < gridLevels.Length; i++)
+        for (int i = 0; i < viewModel.GridLevels.Length; i++)
         {
-            bool showGridLevel = gridLevels[i] >= minimumLiters * 4.0 / 3.0;
-            axes[i + 1].image.enabled = showGridLevel;
-            labels[i + 7].handler.gameObject.SetActive(showGridLevel);
-            int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log(gridLevels[i] / minimumLiters) / logYRange * PlotHeight));
+            PurifierGridLevelViewModel gridLevel = viewModel.GridLevels[i];
+            axes[i + 1].image.enabled = gridLevel.IsVisible;
+            labels[i + 7].handler.gameObject.SetActive(gridLevel.IsVisible);
+            int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log(gridLevel.Liters / minimumLiters) / logYRange * PlotHeight));
             MachineryStyle.Place(axes[i + 1], PlotLeft, PlotTop + gridY, PlotWidth + 1, 1);
             axes[i + 1].image.color = MachineryStyle.Hex("77776f", 0.35f);
             MachineryStyle.Place(labels[i + 7].handler, 0, PlotTop + gridY - 4, labels[i + 7].widthPixels, labels[i + 7].heightPixels);
@@ -250,38 +230,28 @@ internal sealed class PurifierCapacityGraph : PixelElement
         }
     }
 
-    private void UpdateXAxisLabels(int minimumPurity, int maximumPurity)
+    private void UpdateXAxisLabels(PurifierXAxisTickViewModel[] ticks, int minimumPurity, int maximumPurity)
     {
-        var ticks = new List<int>();
-        for (int purity = 8000; purity < maximumPurity; purity += 500)
-        {
-            ticks.Add(purity);
-        }
-        if (ticks.Count == 0 || ticks[ticks.Count - 1] != maximumPurity)
-        {
-            ticks.Add(maximumPurity);
-        }
-
         for (int i = 0; i < 5; i++)
         {
-            bool visible = i < ticks.Count;
-            labels[i + 1].handler.gameObject.SetActive(visible);
-            if (!visible)
+            PurifierXAxisTickViewModel tick = ticks[i];
+            labels[i + 1].handler.gameObject.SetActive(tick.IsVisible);
+            if (!tick.IsVisible)
             {
                 continue;
             }
 
-            int purity = ticks[i];
+            int purity = tick.Purity;
             float fraction = (float)(purity - minimumPurity) / (maximumPurity - minimumPurity);
             int x = PlotLeft + Mathf.RoundToInt(fraction * PlotWidth) - labels[i + 1].widthPixels / 2;
             MachineryStyle.Place(labels[i + 1].handler, x, PlotTop + PlotHeight + 1, labels[i + 1].widthPixels, labels[i + 1].heightPixels);
-            labels[i + 1].SetText((purity / 100.0).ToString("0.##"));
+            labels[i + 1].SetText(tick.Label);
         }
     }
 
     internal void UpdateHover(PointerEventData eventData)
     {
-        if (graphXValues == null)
+        if (currentViewModel == null)
         {
             return;
         }
@@ -292,26 +262,36 @@ internal sealed class PurifierCapacityGraph : PixelElement
         }
 
         float fraction = Mathf.Clamp01(plotPosition.x);
-        int point = Mathf.RoundToInt(fraction * (graphXValues.Length - 1));
-        float lineX = (float)PlotWidth * point / (graphXValues.Length - 1);
+        controller.UpdateHoverDetail(fraction);
+    }
+
+    public void HandleDetailChanged(PurifierPlotDetailViewModel viewModel)
+    {
+        if (!viewModel.IsVisible)
+        {
+            tooltipText.handler.gameObject.SetActive(false);
+            hoverLine.image.enabled = false;
+            tooltipBackground.image.enabled = false;
+            return;
+        }
+        int xValue = viewModel.XValue;
+        string[] lines = viewModel.Lines;
+        if (currentViewModel == null)
+        {
+            return;
+        }
+
+        int minPurity = currentViewModel.XValues[0];
+        int maxPurity = currentViewModel.XValues[currentViewModel.XValues.Length - 1];
+        float xFraction = maxPurity == minPurity
+            ? 0f
+            : (float)(xValue - minPurity) / (maxPurity - minPurity);
+        float lineX = PlotWidth * Mathf.Clamp01(xFraction);
         MachineryStyle.Place(hoverLine, PlotLeft + Mathf.RoundToInt(lineX), PlotTop, 1, PlotHeight);
         hoverLine.image.enabled = true;
 
-        var lines = new List<string>(graphPurities.Length + 1)
-        {
-            "Input " + (graphXValues[point] / 100.0).ToString("0.##") + "%"
-        };
-        for (int series = 0; series < graphPurities.Length; series++)
-        {
-            double capacity = graphYValues[series][point];
-            if (!double.IsNaN(capacity))
-            {
-                lines.Add((graphPurities[series] / 100.0).ToString("0.##") + "% " + FormatReadingLiters(capacity) + "L");
-            }
-        }
-
         tooltipText.SetText(string.Join("\n", lines));
-        int tooltipHeight = lines.Count * TooltipLineHeight + TooltipPadding * 2;
+        int tooltipHeight = lines.Length * TooltipLineHeight + TooltipPadding * 2;
         tooltipText.ResizePixels(TooltipWidth - TooltipPadding * 2, tooltipHeight - TooltipPadding * 2);
         tooltipText.handler.gameObject.SetActive(true);
         int textX = Mathf.RoundToInt(PlotLeft + lineX - TooltipWidth / 2f);
@@ -385,11 +365,9 @@ internal sealed class PurifierCapacityGraph : PixelElement
         return true;
     }
 
-    internal void ClearHover()
+    internal void OnPointerPlotExit()
     {
-        tooltipText.handler.gameObject.SetActive(false);
-        hoverLine.image.enabled = false;
-        tooltipBackground.image.enabled = false;
+        controller.OnPointerPlotExit();
     }
 
     private void PlaceSegment(TreeNodeRender node, float x1, float y1, float x2, float y2)
@@ -450,25 +428,6 @@ internal sealed class PurifierCapacityGraph : PixelElement
         labels[index].SetText(text);
     }
 
-    private static string FormatLiters(double liters)
-    {
-        return liters.ToString(liters < 1.0 ? "0.###" : "0.##");
-    }
-
-    private static string FormatReadingLiters(double liters)
-    {
-        if (liters <= 0.0)
-        {
-            return "0 ";
-        }
-
-        decimal value = (decimal)liters;
-        int exponent = (int)Math.Floor(Math.Log10(liters));
-        decimal placeValue = (decimal)Math.Pow(10.0, exponent - 2);
-        decimal roundedDown = decimal.Floor(value / placeValue) * placeValue;
-        return roundedDown.ToString("G");
-    }
-
     public void ResizePixels(int width, int height)
     {
     }
@@ -517,6 +476,6 @@ internal sealed class PurifierCapacityGraphHover : MonoBehaviour, IPointerEnterH
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        graph?.ClearHover();
+        graph?.OnPointerPlotExit();
     }
 }

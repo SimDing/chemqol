@@ -1,0 +1,230 @@
+using System;
+using System.Collections.Generic;
+
+internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
+{
+    private const int MinTickPurity = 8000;
+    private const int TickPurityStep = 500;
+    private const int MaxTickCount = 5;
+    private const int MaxLegendCount = 6;
+    private const double MinimumFloorLiters = 0.1;
+    private const double MaximumLiters = 6.0;
+    private static readonly double[] DefaultGridLevels = { 3.0, 2.0, 1.0, 0.75, 0.375 };
+    private PurifierGraphViewModel currentViewModel;
+
+    public event Action<PurifierGraphViewModel> ViewModelChanged;
+
+    public void Present(PurifierCalculatorResult calculation)
+    {
+        int[] legendPurities = (int[])calculation.Purities.Clone();
+        Array.Sort(legendPurities);
+        double minimumLiters = FindMinimumLiters(calculation.YValues);
+
+        currentViewModel = new PurifierGraphViewModel
+        {
+            XValues = calculation.XValues,
+            YValues = calculation.YValues,
+            Purities = calculation.Purities,
+            LegendItems = BuildLegendItems(legendPurities),
+            XAxisTicks = BuildXAxisTicks(calculation.XValues[0], calculation.XValues[calculation.XValues.Length - 1]),
+            GridLevels = BuildGridLevels(minimumLiters),
+            MinimumLiters = minimumLiters,
+            MaximumLiters = MaximumLiters,
+            MaximumLitersLabel = FormatLiters(MaximumLiters) + "L",
+            MinimumLitersLabel = FormatLiters(minimumLiters) + "L"
+        };
+
+        ViewModelChanged?.Invoke(currentViewModel);
+    }
+
+    private PurifierLegendItemViewModel[] BuildLegendItems(int[] legendPurities)
+    {
+        var items = new PurifierLegendItemViewModel[MaxLegendCount];
+        for (int i = 0; i < MaxLegendCount; i++)
+        {
+            bool isVisible = i < legendPurities.Length;
+            int purity = isVisible ? legendPurities[i] : 0;
+            items[i] = new PurifierLegendItemViewModel
+            {
+                IsVisible = isVisible,
+                Purity = purity,
+                Label = isVisible ? (purity / 100.0).ToString("0.##") + "%" : string.Empty
+            };
+        }
+
+        return items;
+    }
+
+    private PurifierXAxisTickViewModel[] BuildXAxisTicks(int minimumPurity, int maximumPurity)
+    {
+        var ticks = new List<int>(MaxTickCount);
+
+        for (int purity = MinTickPurity; purity < maximumPurity && ticks.Count < MaxTickCount - 1; purity += TickPurityStep)
+        {
+            if (purity >= minimumPurity)
+            {
+                ticks.Add(purity);
+            }
+        }
+
+        if (ticks.Count == 0 || ticks[ticks.Count - 1] != maximumPurity)
+        {
+            ticks.Add(maximumPurity);
+        }
+
+        var viewModels = new PurifierXAxisTickViewModel[MaxTickCount];
+        for (int i = 0; i < MaxTickCount; i++)
+        {
+            bool isVisible = i < ticks.Count;
+            int purity = isVisible ? ticks[i] : 0;
+            viewModels[i] = new PurifierXAxisTickViewModel
+            {
+                IsVisible = isVisible,
+                Purity = purity,
+                Label = isVisible ? (purity / 100.0).ToString("0.##") : string.Empty
+            };
+        }
+
+        return viewModels;
+    }
+
+    private PurifierGridLevelViewModel[] BuildGridLevels(double minimumLiters)
+    {
+        var gridLevels = new PurifierGridLevelViewModel[DefaultGridLevels.Length];
+        for (int i = 0; i < DefaultGridLevels.Length; i++)
+        {
+            double liters = DefaultGridLevels[i];
+            gridLevels[i] = new PurifierGridLevelViewModel
+            {
+                Liters = liters,
+                IsVisible = liters >= minimumLiters * 4.0 / 3.0
+            };
+        }
+
+        return gridLevels;
+    }
+
+    private double FindMinimumLiters(double[][] values)
+    {
+        double minimumLiters = double.PositiveInfinity;
+        for (int series = 0; series < values.Length; series++)
+        {
+            for (int point = 0; point < values[series].Length; point++)
+            {
+                if (!double.IsNaN(values[series][point]))
+                {
+                    minimumLiters = Math.Min(minimumLiters, Math.Max(MinimumFloorLiters, values[series][point]));
+                }
+            }
+        }
+
+        if (double.IsInfinity(minimumLiters) || minimumLiters >= MaximumLiters)
+        {
+            return MinimumFloorLiters;
+        }
+
+        return minimumLiters;
+    }
+
+    private static string FormatLiters(double liters)
+    {
+        return liters.ToString(liters < 1.0 ? "0.###" : "0.##");
+    }
+}
+
+internal sealed class PurifierDetailPresenter : IPurifierPlotDetailOutput
+{
+    private PurifierGraphViewModel currentGraphViewModel;
+    private float normalizedX = float.NaN;
+    private int currentXValue;
+    private string[] currentLines;
+    private bool hasCurrent;
+
+    public event Action<PurifierPlotDetailViewModel> DetailChanged;
+
+    public PurifierDetailPresenter(IPurifierPlotOutput plotOutput)
+    {
+        plotOutput.ViewModelChanged += HandlePlotViewModelChanged;
+    }
+
+    public void TryPresent(float normalizedX)
+    {
+        this.normalizedX = normalizedX;
+        TryUpdateDetail();
+    }
+
+    private void TryUpdateDetail()
+    {
+        if (currentGraphViewModel == null || currentGraphViewModel.XValues == null || currentGraphViewModel.XValues.Length == 0 || float.IsNaN(normalizedX))
+        {
+            hasCurrent = false;
+            currentXValue = 0;
+            currentLines = Array.Empty<string>();
+            invokeDetailChanged();
+            return;
+        }
+
+        double clamped = Math.Max(0.0, Math.Min(1.0, normalizedX));
+        int point = (int)Math.Round(clamped * (currentGraphViewModel.XValues.Length - 1), MidpointRounding.AwayFromZero);
+
+        var detailLines = new List<string>(currentGraphViewModel.Purities.Length + 1)
+        {
+            "Input " + (currentGraphViewModel.XValues[point] / 100.0).ToString("0.##") + "%"
+        };
+
+        for (int series = 0; series < currentGraphViewModel.Purities.Length; series++)
+        {
+            double capacity = currentGraphViewModel.YValues[series][point];
+            if (!double.IsNaN(capacity))
+            {
+                detailLines.Add((currentGraphViewModel.Purities[series] / 100.0).ToString("0.##") + "% " + FormatReadingLiters(capacity) + "L");
+            }
+        }
+
+        currentXValue = currentGraphViewModel.XValues[point];
+        currentLines = detailLines.ToArray();
+        hasCurrent = true;
+        invokeDetailChanged();
+    }
+
+    public void Clear()
+    {
+        hasCurrent = false;
+        currentXValue = 0;
+        currentLines = Array.Empty<string>();
+        invokeDetailChanged();
+    }
+
+    private void HandlePlotViewModelChanged(PurifierGraphViewModel viewModel)
+    {
+        currentGraphViewModel = viewModel;
+        hasCurrent = false;
+        currentXValue = 0;
+        currentLines = Array.Empty<string>();
+        TryUpdateDetail();
+    }
+
+    private static string FormatReadingLiters(double liters)
+    {
+        if (liters <= 0.0)
+        {
+            return "0 ";
+        }
+
+        decimal value = (decimal)liters;
+        int exponent = (int)Math.Floor(Math.Log10(liters));
+        decimal placeValue = (decimal)Math.Pow(10.0, exponent - 2);
+        decimal roundedDown = decimal.Floor(value / placeValue) * placeValue;
+        return roundedDown.ToString("G");
+    }
+
+    private void invokeDetailChanged()
+    {
+        DetailChanged?.Invoke(new PurifierPlotDetailViewModel
+        {
+            XValue = currentXValue,
+            Lines = currentLines,
+            IsVisible = hasCurrent
+        });
+    }
+}
