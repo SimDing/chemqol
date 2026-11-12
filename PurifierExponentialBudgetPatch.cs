@@ -15,11 +15,9 @@ internal static class PurifierExponentialBudgetPatch
     internal const double BudgetDecayA = 28500.0;
 
     private static readonly Func<GameItem, int, long, int> RemoveLargestFirst =
-        AccessTools.MethodDelegate<Func<GameItem, int, long, int>>(
-            AccessTools.Method(
-                typeof(MachinePurifier),
-                "RemoveLargestFirst",
-                new[] { typeof(GameItem), typeof(int), typeof(long) }));
+        ModReflect.StaticMethod<Func<GameItem, int, long, int>>(
+            typeof(MachinePurifier),
+            "RemoveLargestFirst");
 
     private static bool Prefix(GameItem machine, GameItem waterContainer, bool ignoreBonus, ref int __result)
     {
