@@ -6,3 +6,5 @@ option_close_chem_finisher_selector,选择配方后关闭化学制剂成型机�
 option_exponential_purifier_budget,净水器重新平衡
 section_liquid_handling,液体操作
 section_machines,机器
+option_water_test_strip_purity_tag,使用水质测试条后添加纯度标签
+option_composition_spectrometer_purity_tag,使用成分光谱仪后添加纯度标签

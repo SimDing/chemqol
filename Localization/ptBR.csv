@@ -6,3 +6,5 @@ option_close_chem_finisher_selector,Fechar o seletor de receitas do Chem Finishe
 option_exponential_purifier_budget,Reequilíbrio do purificador de água
 section_liquid_handling,Manuseio de líquidos
 section_machines,Máquinas
+option_water_test_strip_purity_tag,Adicionar uma etiqueta de pureza ao usar uma tira de teste de água
+option_composition_spectrometer_purity_tag,Adicionar uma etiqueta de pureza ao usar o espectrômetro de composição

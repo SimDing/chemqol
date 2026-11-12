@@ -6,3 +6,5 @@ option_close_chem_finisher_selector,Chiudi il selettore delle ricette di Chem Fi
 option_exponential_purifier_budget,Riequilibrio del purificatore d'acqua
 section_liquid_handling,Gestione dei liquidi
 section_machines,Macchinari
+option_water_test_strip_purity_tag,Aggiungi un'etichetta di purezza dopo aver usato una striscia reattiva per l'acqua
+option_composition_spectrometer_purity_tag,Aggiungi un'etichetta di purezza dopo aver usato lo spettrometro di composizione

@@ -6,3 +6,5 @@ option_close_chem_finisher_selector,선택 후 Chem Finisher 레시피 선택 �
 option_exponential_purifier_budget,정수기 밸런스 재조정
 section_liquid_handling,액체 취급
 section_machines,기계
+option_water_test_strip_purity_tag,수질 테스트 스트립 사용 후 순도 태그 추가
+option_composition_spectrometer_purity_tag,성분 분석 분광계 사용 후 순도 태그 추가

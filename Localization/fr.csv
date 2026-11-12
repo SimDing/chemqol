@@ -6,3 +6,5 @@ option_close_chem_finisher_selector,Fermer le sélecteur de recettes du poste de
 option_exponential_purifier_budget,Rééquilibrage du purificateur d'eau
 section_liquid_handling,Manipulation des liquides
 section_machines,Machines
+option_water_test_strip_purity_tag,Ajouter une étiquette de pureté après l'utilisation d'une bandelette de test de l'eau
+option_composition_spectrometer_purity_tag,Ajouter une étiquette de pureté après l'utilisation du spectromètre de composition

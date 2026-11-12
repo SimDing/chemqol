@@ -8,6 +8,8 @@ internal static class ChemQOLConfig
     private static ConfigEntry<bool> chemFinisherAutoSelect;
     private static ConfigEntry<bool> closeChemFinisherSelector;
     private static ConfigEntry<bool> exponentialPurifierBudget;
+    private static ConfigEntry<bool> waterTestStripPurityTag;
+    private static ConfigEntry<bool> compositionSpectrometerPurityTag;
     private static ConfigEntry<bool> debugLogging;
 
     internal static bool PourWhileSelected => pourWhileSelected == null || pourWhileSelected.Value;
@@ -16,6 +18,8 @@ internal static class ChemQOLConfig
     internal static bool ChemFinisherAutoSelect => chemFinisherAutoSelect == null || chemFinisherAutoSelect.Value;
     internal static bool CloseChemFinisherSelector => closeChemFinisherSelector == null || closeChemFinisherSelector.Value;
     internal static bool ExponentialPurifierBudget => exponentialPurifierBudget != null && exponentialPurifierBudget.Value;
+    internal static bool WaterTestStripPurityTag => waterTestStripPurityTag == null || waterTestStripPurityTag.Value;
+    internal static bool CompositionSpectrometerPurityTag => compositionSpectrometerPurityTag == null || compositionSpectrometerPurityTag.Value;
     internal static bool DebugLogging => debugLogging != null && debugLogging.Value;
 
     internal static void Initialize(string modId)
@@ -27,6 +31,8 @@ internal static class ChemQOLConfig
         chemFinisherAutoSelect = config.Define("chem_finisher_auto_select", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_chem_finisher_auto_select"));
         closeChemFinisherSelector = config.Define("close_chem_finisher_selector", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_close_chem_finisher_selector"));
         exponentialPurifierBudget = config.Define("exponential_purifier_budget", false, "Machines", () => ModHelper.GetLocalized(ModId, "option_exponential_purifier_budget"));
+        waterTestStripPurityTag = config.Define("water_test_strip_purity_tag", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_water_test_strip_purity_tag"));
+        compositionSpectrometerPurityTag = config.Define("composition_spectrometer_purity_tag", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_composition_spectrometer_purity_tag"));
         debugLogging = config.Define("debug_logging", false, "Debug", () => ModHelper.GetLocalized(ModId, "option_debug_logging"));
     }
 
@@ -55,6 +61,8 @@ internal static class ChemQOLConfig
                 "chem_finisher_auto_select" => "section_machines",
                 "close_chem_finisher_selector" => "section_machines",
                 "exponential_purifier_budget" => "section_machines",
+                "water_test_strip_purity_tag" => "section_machines",
+                "composition_spectrometer_purity_tag" => "section_machines",
                 "debug_logging" => "section_debug",
                 _ => null
             };
