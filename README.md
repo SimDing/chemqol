@@ -1,18 +1,25 @@
 # ChemQOL
 
-ChemQOL is a quality-of-life mod for chemical workflows in **Probably Stolen**. It focuses on chemistry machines and handling chemical liquids, with a couple of liquid-handling conveniences that can also be used with water.
+ChemQOL is a quality-of-life and rebalancing mod for **Probably Stolen**. It focuses on chemistry machines and liquids.
 
 ## Features
 
-- Safety Cut-Off: Turn off the heating plate automatically when adding a liquid container.
-- Automatically select the chem finisher recipe that best matches the inserted container's active ingredient.
-- Closes the chem finisher recipe selector after choosing a recipe.
-- Double-click a liquid container to select it, hover over another compatible container, then scroll down to pour a small amount (10% of max capacity) into it.
-- Double-click a pipette to select it, hover over another compatible container, then scroll up to draw a small amount of liquid from it.
+- 🧯 Heating Plate: Turns off when adding a liquid container.
+- 🎯 Chem Finisher: Select the recipe that best matches an inserted container's ingredients.
+- 🧪 Chem Finisher: Close the recipe selector after choosing a recipe.
+- 🫗 Pour Liquids: While holding a liquid container (**use** not drag), scroll down to pour 10% of its capacity into the container under the cursor.
+- 💧 Droppers: While holding a dropper, scroll up to draw 10% of its capacity from the container under the cursor.
+- 🧪 Water Test Strips and Composition Spectrometer: Add the tested water purity to the container like the AquaScan does.
+- 📈 Water Purifier: Show how much water of a given purity it can purify to the quality gates of 90, 96, 98, 99 and 99.9% purity.
+- 📈 Water Purifier: Show the exact amount of the contained liquid it can process once its purity has been tested.
+- 📊 Water Purifier: Re-balance the water purifier's capacity with a physically plausible model without the minimum at 94%.
 
+| Original Water Purifier Capacity | Modified Water Purifier Capacity |
+| - | - |
+| ![Default Water Purifier Capacity](images/defaultPurificationCapacity.png) | ![Modified Water Purifier Capacity](images/rebalancedPurificationCapacity.png) |
 ## Configuration
 
-Enable the mod, then open its configuration panel from the Mods menu. Gameplay options are enabled by default; every feature can be deactivated individually.
+Enable the mod, then open its configuration panel from the Mods menu. All gameplay options but the rebalance are enabled by default; every feature can be toggled individually.
 
 ### Translations
 
@@ -20,12 +27,28 @@ Option labels are localized in English and German.
 
 Machine Translations in French, Russian, Chinese, Japanese, Spanish, Brazilian Portuguese, Korean, Italian, and Polish.
 
+## Installation
 
-## Build and Install from Source
+### Using prebuild binaries
 
-On Linux, install the .NET SDK and GNU Make, then configure the game installation directory.
+Download the latest release archive `ChemQOL-*.zip` from the release section.
 
-If you have a custom steam install location:
+Unzip the file into `steamapps/common/Probably Stolen/Mods/de.simonding.chemqol`.
+The folder `de.simonding.chemqol` needs to contain the file `ChemQOL.dll`.
+
+### Build and Install from Source
+
+On Linux, install the .NET SDK and GNU Make.
+
+Run 
+
+```sh
+make install
+```
+
+in the projects root folder.
+
+#### If you have a custom steam install location:
 
 ```sh
 cp .env.example .env
@@ -36,20 +59,6 @@ Edit `.env` and set `GAME_DIR` to the directory containing `Probably Stolen_Data
 ```make
 GAME_DIR=/path/to/SteamLibrary/steamapps/common/Probably Stolen
 ```
-
-Build and install it into the game's `Mods/de.simonding.chemqol` directory:
-
-```sh
-make install
-```
-
-To create a versioned ZIP suitable for attaching to a GitHub release:
-
-```sh
-make release
-```
-
-The archive is written to `dist/` and contains the installable mod folder and this README.
 
 ## 简体中文（机器翻译）
 
