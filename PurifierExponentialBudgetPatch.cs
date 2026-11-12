@@ -61,7 +61,7 @@ internal static class PurifierExponentialBudgetPatch
         {
             return 0.0;
         }
-        if (performance <= 0)
+        if (performance <= -100.0)
         {
             return 0.0;
         }
