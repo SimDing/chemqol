@@ -6,5 +6,6 @@ option_close_chem_finisher_selector,Zamknij wybór receptury wykańczacza chemic
 option_exponential_purifier_budget,Przebalansowanie oczyszczacza wody
 section_liquid_handling,Obsługa cieczy
 section_machines,Maszyny
-option_water_test_strip_purity_tag,Dodaj etykietę czystości po użyciu paska testowego wody
-option_composition_spectrometer_purity_tag,Dodaj etykietę czystości po użyciu spektrometru składu
+option_water_test_strip_purity_tag,Dodaj etykietę skanowania czystości wody po użyciu paska testowego wody
+option_composition_spectrometer_purity_tag,Dodaj etykietę skanowania czystości wody po użyciu spektrometru składu
+option_require_purifier_plot_scan_tag,Wymagaj etykiety skanowania czystości wody, aby wyświetlić szczegóły wykresu oczyszczacza

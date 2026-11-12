@@ -6,5 +6,6 @@ option_close_chem_finisher_selector,Закрывать список рецепт
 option_exponential_purifier_budget,Переуравновешивание очистителя воды
 section_liquid_handling,Работа с жидкостями
 section_machines,Оборудование
-option_water_test_strip_purity_tag,Добавлять отметку о чистоте после использования тест-полоски для воды
-option_composition_spectrometer_purity_tag,Добавлять отметку о чистоте после использования спектрометра состава
+option_water_test_strip_purity_tag,Добавлять отметку сканирования чистоты воды после использования тест-полоски
+option_composition_spectrometer_purity_tag,Добавлять отметку сканирования чистоты воды после использования спектрометра состава
+option_require_purifier_plot_scan_tag,Требовать отметку сканирования чистоты воды для отображения деталей графика очистителя

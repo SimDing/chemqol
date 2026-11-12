@@ -41,7 +41,7 @@ internal sealed class PurifierCreatePlotDetailInteractor
 
     public void TryCreate(PurifierMachineState state, int? mouseoverPurity)
     {
-        int? readoutPurity = mouseoverPurity ?? state.ContainerWaterPurity;
+        int? readoutPurity = mouseoverPurity ?? (mayReadContainerPurity(state) ? state.ContainerWaterPurity : null);
         
         if (!readoutPurity.HasValue)
         {
@@ -59,5 +59,10 @@ internal sealed class PurifierCreatePlotDetailInteractor
             purifierMath);
 
         output.Present(result);
+    }
+
+    private bool mayReadContainerPurity(PurifierMachineState state)
+    {
+        return state.HasContainerScanResult || !ChemQOLConfig.RequirePurifierPlotScanTag;
     }
 }

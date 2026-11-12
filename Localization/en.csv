@@ -6,7 +6,8 @@ option_close_chem_finisher_selector,Close Chem Finisher recipe selector after se
 option_exponential_purifier_budget,Water purifier rebalance
 section_liquid_handling,Liquid Handling
 section_machines,Machines
-option_water_test_strip_purity_tag,Add a purity tag after using a water test strip
-option_composition_spectrometer_purity_tag,Add a purity tag after using the composition spectrometer
+option_water_test_strip_purity_tag,Add the water purity scan tag after using a water test strip
+option_composition_spectrometer_purity_tag,Add the water purity scan tag after using the composition spectrometer
+option_require_purifier_plot_scan_tag,Require the water purity scan tag before showing purifier plot detail
 option_debug_logging,Enable verbose debug logging for ChemQOL
 section_debug,Debug

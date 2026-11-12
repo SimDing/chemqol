@@ -20,11 +20,14 @@ internal sealed class GamePurifierMachineStateProvider : IPurifierMachineStatePr
         int? containerWaterPurity = waterContainerSlots.Count > 0
             ? WaterHelper.GetWaterPurity(waterContainerSlots[0].childItem)
             : (int?)null;
+        bool hasContainerScanResult = waterContainerSlots.Count > 0
+            && waterContainerSlots[0].childItem.IsTag("LAST_SCAN_RESULT_TAG");
 
         return new PurifierMachineState(
             MachineryHelper.GetCurrentQualityBonus(machine),
             MachineryHelper.GetCurrentPerformanceBonus(machine),
-            containerWaterPurity
+            containerWaterPurity,
+            hasContainerScanResult
         );
     }
 }
