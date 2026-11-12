@@ -78,7 +78,7 @@ decompile: check-game
 	  printf 'ILSpy command not found. Run: make install-decompiler\n' >&2; \
 	  exit 1; \
 	}
-	mkdir -p "$(DECOMPILE_DIR)"
+	mkdir -p "$(DECOMPILE_DIR)"  && rm -rf "$(DECOMPILE_DIR)"/*
 	"$(ILSPYCMD)" -p -o "$(DECOMPILE_DIR)" "$(MANAGED_DIR)/Assembly-CSharp.dll"
 
 uninstall:

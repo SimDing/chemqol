@@ -7,6 +7,7 @@ internal static class ChemQOLConfig
     private static ConfigEntry<bool> heatingPlateAutoOff;
     private static ConfigEntry<bool> chemFinisherAutoSelect;
     private static ConfigEntry<bool> closeChemFinisherSelector;
+    private static ConfigEntry<bool> exponentialPurifierBudget;
     private static ConfigEntry<bool> debugLogging;
 
     internal static bool PourWhileSelected => pourWhileSelected == null || pourWhileSelected.Value;
@@ -14,6 +15,7 @@ internal static class ChemQOLConfig
     internal static bool HeatingPlateAutoOff => heatingPlateAutoOff == null || heatingPlateAutoOff.Value;
     internal static bool ChemFinisherAutoSelect => chemFinisherAutoSelect == null || chemFinisherAutoSelect.Value;
     internal static bool CloseChemFinisherSelector => closeChemFinisherSelector == null || closeChemFinisherSelector.Value;
+    internal static bool ExponentialPurifierBudget => exponentialPurifierBudget != null && exponentialPurifierBudget.Value;
     internal static bool DebugLogging => debugLogging != null && debugLogging.Value;
 
     internal static void Initialize(string modId)
@@ -24,6 +26,7 @@ internal static class ChemQOLConfig
         heatingPlateAutoOff = config.Define("heating_plate_auto_off", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_heating_plate_auto_off"));
         chemFinisherAutoSelect = config.Define("chem_finisher_auto_select", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_chem_finisher_auto_select"));
         closeChemFinisherSelector = config.Define("close_chem_finisher_selector", true, "Machines", () => ModHelper.GetLocalized(ModId, "option_close_chem_finisher_selector"));
+        exponentialPurifierBudget = config.Define("exponential_purifier_budget", false, "Machines", () => ModHelper.GetLocalized(ModId, "option_exponential_purifier_budget"));
         debugLogging = config.Define("debug_logging", false, "Debug", () => ModHelper.GetLocalized(ModId, "option_debug_logging"));
     }
 
@@ -51,6 +54,7 @@ internal static class ChemQOLConfig
                 "heating_plate_auto_off" => "section_machines",
                 "chem_finisher_auto_select" => "section_machines",
                 "close_chem_finisher_selector" => "section_machines",
+                "exponential_purifier_budget" => "section_machines",
                 "debug_logging" => "section_debug",
                 _ => null
             };

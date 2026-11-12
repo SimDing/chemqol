@@ -3,5 +3,6 @@ option_pipette_draw,Scorri verso l'alto per aspirare con la pipetta
 option_heating_plate_auto_off,Spegni la piastra riscaldante quando inserisci un contenitore
 option_chem_finisher_auto_select,Seleziona automaticamente la ricetta di Chem Finisher
 option_close_chem_finisher_selector,Chiudi il selettore delle ricette di Chem Finisher dopo la selezione
+option_exponential_purifier_budget,Riequilibrio del purificatore d'acqua
 section_liquid_handling,Gestione dei liquidi
 section_machines,Macchinari

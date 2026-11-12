@@ -4,7 +4,7 @@ using System.Collections.Generic;
 internal interface IPurifierMath
 {
     int GetMaxPurityCap(int quality);
-    double GetDirtBonus(int inputPurity);
+    long GetRemovalBudget(long totalVolume, int inputPurity, int performance);
 }
 
 internal sealed class PurifierCalculatorInput
@@ -137,15 +137,13 @@ internal static class PurifierCalculator
 
     private static long MaxVolumeForTarget(int inputPurity, int targetPurity, int performance, IPurifierMath purifierMath)
     {
-        double multiplier = (purifierMath.GetDirtBonus(inputPurity) + performance / 100.0) * 1.25;
         long low = 0;
         long high = MaxContainerVolume;
         while (low < high)
         {
             long middle = low + (high - low + 1) / 2;
             long requiredRemoval = (middle * (targetPurity - inputPurity) + 9999) / 10000;
-            long budgetVolume = Math.Min(middle, 10000000L);
-            long budget = (long)((budgetVolume * 3 / 1000 + 25000) * multiplier);
+            long budget = purifierMath.GetRemovalBudget(middle, inputPurity, performance);
             if (requiredRemoval <= budget)
             {
                 low = middle;

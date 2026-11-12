@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 internal sealed class GamePurifierMachineStateProvider : IPurifierMachineStateProvider
@@ -35,8 +36,20 @@ internal sealed class MachinePurifierMathAdapter : IPurifierMath
         return MachinePurifier.GetMaxPurityCap(quality);
     }
 
-    public double GetDirtBonus(int inputPurity)
+    public long GetRemovalBudget(long totalVolume, int inputPurity, int performance)
     {
-        return MachinePurifier.GetDirtBonus(inputPurity);
+        if (ChemQOLConfig.ExponentialPurifierBudget)
+        {
+            long removableImpurities = totalVolume * (10000L - inputPurity) / 10000L;
+            double budgetFraction = PurifierExponentialBudgetPatch.GetBudgetFraction(totalVolume, performance);
+            return (long)(removableImpurities * budgetFraction);
+        }
+
+        double multiplier = (MachinePurifier.GetDirtBonus(inputPurity) + performance / 100.0)
+            * MachinePurifier.REMOVAL_MULTIPLIER;
+        long budgetVolume = Math.Min(totalVolume, MachinePurifier.BUDGET_VOLUME_CAP_UL);
+        long baseBudget = budgetVolume * MachinePurifier.BUDGET_VOLUME_PERMILLE / 1000L
+            + MachinePurifier.BUDGET_FLAT_UL;
+        return (long)(baseBudget * multiplier);
     }
 }

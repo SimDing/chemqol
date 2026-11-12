@@ -3,5 +3,6 @@ option_pipette_draw,Przewiń w górę aby nabrać płyn zakraplaczem
 option_heating_plate_auto_off,Wyłącz płytę grzewczą po włożeniu pojemnika
 option_chem_finisher_auto_select,Automatycznie wybieraj recepturę wykańczacza chemicznego
 option_close_chem_finisher_selector,Zamknij wybór receptury wykańczacza chemicznego po jej wybraniu
+option_exponential_purifier_budget,Przebalansowanie oczyszczacza wody
 section_liquid_handling,Obsługa cieczy
 section_machines,Maszyny

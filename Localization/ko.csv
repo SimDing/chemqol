@@ -3,5 +3,6 @@ option_pipette_draw,위로 스크롤하여 피펫으로 흡입하기
 option_heating_plate_auto_off,용기를 넣으면 가열판 끄기
 option_chem_finisher_auto_select,Chem Finisher 레시피 자동 선택
 option_close_chem_finisher_selector,선택 후 Chem Finisher 레시피 선택 창 닫기
+option_exponential_purifier_budget,정수기 밸런스 재조정
 section_liquid_handling,액체 취급
 section_machines,기계

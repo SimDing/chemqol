@@ -3,5 +3,6 @@ option_pipette_draw,Прокрутите вверх чтобы набрать ж
 option_heating_plate_auto_off,Выключать термоплиту при установке ёмкости
 option_chem_finisher_auto_select,Автоматически выбирать рецепт Chem Finisher
 option_close_chem_finisher_selector,Закрывать список рецептов Chem Finisher после выбора
+option_exponential_purifier_budget,Переуравновешивание очистителя воды
 section_liquid_handling,Работа с жидкостями
 section_machines,Оборудование
