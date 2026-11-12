@@ -21,7 +21,7 @@ internal interface IPurifierMachineStateProvider
 
 internal interface IPurifierPlotOutput
 {
-    event Action<PurifierGraphViewModel> ViewModelChanged;
+    event Action<PurifierPlotViewModel> ViewModelChanged;
 
     void Present(PurifierCalculatorResult calculation);
 }

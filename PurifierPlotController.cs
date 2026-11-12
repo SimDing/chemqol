@@ -1,4 +1,4 @@
-internal sealed class PurifierCapacityGraphController
+internal sealed class PurifierPlotController
 {
     private readonly IPurifierMachineStateProvider machineStateProvider;
     private readonly PurifierCreatePlotInteractor createPlotInteractor;
@@ -7,7 +7,7 @@ internal sealed class PurifierCapacityGraphController
     private PurifierMachineState lastState;
     private bool hasObservedState;
 
-    public PurifierCapacityGraphController(
+    public PurifierPlotController(
         IPurifierMachineStateProvider machineStateProvider,
         PurifierCreatePlotInteractor createPlotInteractor,
         PurifierCreatePlotDetailInteractor createPlotDetailInteractor)

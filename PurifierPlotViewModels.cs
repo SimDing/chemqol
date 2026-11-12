@@ -18,7 +18,7 @@ internal sealed class PurifierGridLevelViewModel
     public bool IsVisible { get; set; }
 }
 
-internal sealed class PurifierGraphViewModel
+internal sealed class PurifierPlotViewModel
 {
     public int[] XValues { get; set; }
     public double[][] YValues { get; set; }

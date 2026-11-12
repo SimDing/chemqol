@@ -6,31 +6,31 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 [HarmonyPatch(typeof(MachinePurifier), nameof(MachinePurifier.WaterPurifier))]
-internal static class PurifierCapacityGraphPatch
+internal static class PurifierPlotPatch
 {
     private static void Postfix(GameItem __result)
     {
         if (__result?.contentWindow?.childElement is MachineryPanelRow row)
         {
-            var plotOutput = new PurifierCapacityGraphPresenter();
-            var detailOutput = new PurifierDetailPresenter();
+            var plotOutput = new PurifierPlotPresenter();
+            var detailOutput = new PurifierPlotDetailPresenter();
             var plotInteractor = new PurifierCreatePlotInteractor(
                 new MachinePurifierMathAdapter(),
                 plotOutput);
             var detailInteractor = new PurifierCreatePlotDetailInteractor(
                 new MachinePurifierMathAdapter(),
                 detailOutput);
-            var controller = new PurifierCapacityGraphController(
+            var controller = new PurifierPlotController(
                 new GamePurifierMachineStateProvider(__result),
                 plotInteractor,
                 detailInteractor);
-            var graph = new PurifierCapacityGraph(controller, plotOutput, detailOutput);
-            row.Add(new MachineryPanel("Purification capacity", graph, "purifier-capacity"));
+            var plot = new PurifierPlot(controller, plotOutput, detailOutput);
+            row.Add(new MachineryPanel("Purification capacity", plot, "purifier-capacity"));
         }
     }
 }
 
-internal sealed class PurifierCapacityGraph : PixelElement
+internal sealed class PurifierPlot : PixelElement
 {
     private const int Width = 224;
     private const int Height = 126;
@@ -53,7 +53,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
         MachineryStyle.Hex("78c9df")
     };
 
-    private readonly PurifierCapacityGraphController controller;
+    private readonly PurifierPlotController controller;
     private readonly TreeNodeRender plotViewport;
     private readonly TreeNodeRender[] lineSegments = new TreeNodeRender[SeriesCount * (PointCount - 1)];
     private readonly TreeNodeRender[] axes = new TreeNodeRender[8];
@@ -65,7 +65,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
     private readonly TreeNodeRender tooltipBackground;
     private readonly MachineryText tooltipText;
     private readonly Vector3[] cornerBuffer = new Vector3[4];
-    private PurifierGraphViewModel currentViewModel;
+    private PurifierPlotViewModel currentViewModel;
 
     public bool canResize => false;
     public int widthPixels => Width;
@@ -74,15 +74,15 @@ internal sealed class PurifierCapacityGraph : PixelElement
     public RectTransform rectTransform => handler.rectTransform;
     public TreeNodeRender inner => handler;
 
-    public PurifierCapacityGraph(
-        PurifierCapacityGraphController controller,
+    public PurifierPlot(
+        PurifierPlotController controller,
         IPurifierPlotOutput plotOutput,
         IPurifierPlotDetailOutput detailOutput)
     {
         this.controller = controller;
         plotOutput.ViewModelChanged += HandleViewModelChanged;
         detailOutput.DetailChanged += HandleDetailChanged;
-        handler = TreeNodeRender.Instantiate(this, "PurifierCapacityGraph");
+        handler = TreeNodeRender.Instantiate(this, "PurifierPlot");
         plotViewport = TreeNodeRender.Instantiate().SetParent(handler);
         plotViewport.image.enabled = false;
         plotViewport.rectTransform.anchoredPosition = new Vector2(PlotLeft, -PlotTop);
@@ -102,7 +102,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
         hoverSurface.rectTransform.offsetMin = Vector2.zero;
         hoverSurface.rectTransform.offsetMax = Vector2.zero;
         hoverSurface.image.raycastTarget = true;
-        hoverSurface.gameObject.AddComponent<PurifierCapacityGraphHover>().Initialize(this);
+        hoverSurface.gameObject.AddComponent<PurifierPlotHover>().Initialize(this);
 
         for (int i = 0; i < axes.Length; i++)
         {
@@ -139,7 +139,7 @@ internal sealed class PurifierCapacityGraph : PixelElement
         tooltipText.handler.image.raycastTarget = false;
         tooltipText.handler.gameObject.SetActive(false);
 
-        handler.gameObject.AddComponent<PurifierCapacityGraphWatcher>().Initialize(this);
+        handler.gameObject.AddComponent<PurifierPlotWatcher>().Initialize(this);
         Validate();
     }
 
@@ -153,13 +153,13 @@ internal sealed class PurifierCapacityGraph : PixelElement
         controller.Refresh();
     }
 
-    public void HandleViewModelChanged(PurifierGraphViewModel viewModel)
+    public void HandleViewModelChanged(PurifierPlotViewModel viewModel)
     {
         currentViewModel = viewModel;
         Draw(viewModel);
     }
 
-    private void Draw(PurifierGraphViewModel viewModel)
+    private void Draw(PurifierPlotViewModel viewModel)
     {
         int[] xValues = viewModel.XValues;
         double[][] values = viewModel.YValues;
@@ -445,42 +445,42 @@ internal sealed class PurifierCapacityGraph : PixelElement
     public int YClamp(int y) => 0;
 }
 
-internal sealed class PurifierCapacityGraphWatcher : MonoBehaviour
+internal sealed class PurifierPlotWatcher : MonoBehaviour
 {
-    private PurifierCapacityGraph graph;
+    private PurifierPlot plot;
 
-    internal void Initialize(PurifierCapacityGraph graph)
+    internal void Initialize(PurifierPlot plot)
     {
-        this.graph = graph;
+        this.plot = plot;
     }
 
     private void Update()
     {
-        graph?.RefreshIfNeeded();
+        plot?.RefreshIfNeeded();
     }
 }
 
-internal sealed class PurifierCapacityGraphHover : MonoBehaviour, IPointerEnterHandler, IPointerMoveHandler, IPointerExitHandler
+internal sealed class PurifierPlotHover : MonoBehaviour, IPointerEnterHandler, IPointerMoveHandler, IPointerExitHandler
 {
-    private PurifierCapacityGraph graph;
+    private PurifierPlot plot;
 
-    internal void Initialize(PurifierCapacityGraph graph)
+    internal void Initialize(PurifierPlot plot)
     {
-        this.graph = graph;
+        this.plot = plot;
     }
 
     public void OnPointerEnter(PointerEventData eventData)
     {
-        graph?.UpdateHover(eventData);
+        plot?.UpdateHover(eventData);
     }
 
     public void OnPointerMove(PointerEventData eventData)
     {
-        graph?.UpdateHover(eventData);
+        plot?.UpdateHover(eventData);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        graph?.OnPointerPlotExit();
+        plot?.OnPointerPlotExit();
     }
 }

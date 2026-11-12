@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
+internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
 {
     private const int MinTickPurity = 8000;
     private const int TickPurityStep = 500;
@@ -10,9 +10,9 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
     private const double MinimumFloorLiters = 0.1;
     private const double MaximumLiters = 6.0;
     private static readonly double[] DefaultGridLevels = { 3.0, 2.0, 1.0, 0.75, 0.375 };
-    private PurifierGraphViewModel currentViewModel;
+    private PurifierPlotViewModel currentViewModel;
 
-    public event Action<PurifierGraphViewModel> ViewModelChanged;
+    public event Action<PurifierPlotViewModel> ViewModelChanged;
 
     public void Present(PurifierCalculatorResult calculation)
     {
@@ -20,7 +20,7 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
         Array.Sort(legendPurities);
         double minimumLiters = FindMinimumLiters(calculation.YValues);
 
-        currentViewModel = new PurifierGraphViewModel
+        currentViewModel = new PurifierPlotViewModel
         {
             XValues = calculation.XValues,
             YValues = calculation.YValues,
@@ -132,7 +132,7 @@ internal sealed class PurifierCapacityGraphPresenter : IPurifierPlotOutput
     }
 }
 
-internal sealed class PurifierDetailPresenter : IPurifierPlotDetailOutput
+internal sealed class PurifierPlotDetailPresenter : IPurifierPlotDetailOutput
 {
     public event Action<PurifierPlotDetailViewModel> DetailChanged;
 
