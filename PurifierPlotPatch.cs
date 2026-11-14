@@ -38,7 +38,7 @@ internal sealed class PurifierPlot : PixelElement
     private const int PlotTop = 10;
     private const int PlotWidth = 184;
     private const int PlotHeight = 82;
-    private const int PointCount = PlotWidth + 1;
+    private const int PointCount = PurifierCalculator.PointCount;
     private const int TooltipWidth = 56;
     private const int TooltipLineHeight = 7;
     private const int TooltipPadding = 2;
@@ -93,6 +93,7 @@ internal sealed class PurifierPlot : PixelElement
         for (int i = 0; i < lineSegments.Length; i++)
         {
             lineSegments[i] = CreateBlock(Color.white, plotViewport);
+            lineSegments[i].rectTransform.pivot = new Vector2(0.5f, 0.5f);
             lineSegments[i].image.enabled = false;
         }
 

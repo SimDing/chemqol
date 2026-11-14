@@ -30,7 +30,7 @@ internal sealed class PurifierDetailCalculationResult
 internal static class PurifierCalculator
 {
     private const int MinPurity = 8000;
-    private const int PointCount = 185;
+    public const int PointCount = 100;
     private const long MaxContainerVolume = int.MaxValue;
     private const double MachineMaximumDisplayTolerance = 0.02;
 
