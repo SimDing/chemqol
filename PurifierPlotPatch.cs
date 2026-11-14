@@ -16,7 +16,8 @@ internal static class PurifierPlotPatch
             var detailOutput = new PurifierPlotDetailPresenter();
             var plotInteractor = new PurifierCreatePlotInteractor(
                 new MachinePurifierMathAdapter(),
-                plotOutput);
+                plotOutput,
+                PurifierPlotPresenter.MaximumDisplayVolume);
             var detailInteractor = new PurifierCreatePlotDetailInteractor(
                 new MachinePurifierMathAdapter(),
                 detailOutput);
@@ -162,10 +163,12 @@ internal sealed class PurifierPlot : PixelElement
 
     private void Draw(PurifierPlotViewModel viewModel)
     {
-        int[] xValues = viewModel.XValues;
+        int[][] xValues = viewModel.XValues;
         double[][] values = viewModel.YValues;
         int[] purities = viewModel.Purities;
-        UpdateXAxisLabels(viewModel.XAxisTicks, xValues[0], xValues[xValues.Length - 1]);
+        int minimumPurity = viewModel.MinimumPurity;
+        int maximumPurity = viewModel.MaximumPurity;
+        UpdateXAxisLabels(viewModel.XAxisTicks, minimumPurity, maximumPurity);
         for (int i = 0; i < legendMarkers.Length; i++)
         {
             PurifierLegendItemViewModel legendItem = viewModel.LegendItems[i];
@@ -205,10 +208,10 @@ internal sealed class PurifierPlot : PixelElement
         int segmentIndex = 0;
         for (int series = 0; series < SeriesCount; series++)
         {
-            for (int point = 0; point < xValues.Length - 1; point++)
+            for (int point = 0; point < PointCount - 1; point++)
             {
                 TreeNodeRender segment = lineSegments[segmentIndex++];
-                if (series >= values.Length)
+                if (series >= values.Length || series >= xValues.Length || point >= values[series].Length - 1 || point >= xValues[series].Length - 1)
                 {
                     segment.image.enabled = false;
                     continue;
@@ -221,9 +224,9 @@ internal sealed class PurifierPlot : PixelElement
                     continue;
                 }
 
-                float xRange = xValues[xValues.Length - 1] - xValues[0];
-                float x1 = (float)PlotWidth * (xValues[point] - xValues[0]) / xRange;
-                float x2 = (float)PlotWidth * (xValues[point + 1] - xValues[0]) / xRange;
+                float xRange = Math.Max(1, maximumPurity - minimumPurity);
+                float x1 = (float)PlotWidth * (xValues[series][point] - minimumPurity) / xRange;
+                float x2 = (float)PlotWidth * (xValues[series][point + 1] - minimumPurity) / xRange;
                 float y1 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point]) / minimumLiters) / logYRange * PlotHeight);
                 float y2 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point + 1]) / minimumLiters) / logYRange * PlotHeight);
                 segment.image.color = GetSeriesColor(purities[series]);
@@ -265,8 +268,8 @@ internal sealed class PurifierPlot : PixelElement
         }
 
         float fraction = Mathf.Clamp01(plotPosition.x);
-        int minimumPurity = currentViewModel.XValues[0];
-        int maximumPurity = currentViewModel.XValues[currentViewModel.XValues.Length - 1];
+        int minimumPurity = currentViewModel.MinimumPurity;
+        int maximumPurity = currentViewModel.MaximumPurity;
         int mouseoverPurity = minimumPurity + Mathf.RoundToInt(fraction * (maximumPurity - minimumPurity));
         controller.UpdateHoverDetail(mouseoverPurity);
     }
@@ -287,8 +290,8 @@ internal sealed class PurifierPlot : PixelElement
             return;
         }
 
-        int minPurity = currentViewModel.XValues[0];
-        int maxPurity = currentViewModel.XValues[currentViewModel.XValues.Length - 1];
+        int minPurity = currentViewModel.MinimumPurity;
+        int maxPurity = currentViewModel.MaximumPurity;
         float xFraction = maxPurity == minPurity
             ? 0f
             : (float)(xValue - minPurity) / (maxPurity - minPurity);

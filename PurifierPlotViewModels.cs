@@ -20,7 +20,9 @@ internal sealed class PurifierGridLevelViewModel
 
 internal sealed class PurifierPlotViewModel
 {
-    public int[] XValues { get; set; }
+    public int MinimumPurity { get; set; }
+    public int MaximumPurity { get; set; }
+    public int[][] XValues { get; set; }
     public double[][] YValues { get; set; }
     public int[] Purities { get; set; }
     public PurifierLegendItemViewModel[] LegendItems { get; set; }

@@ -8,7 +8,8 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
     private const int MaxTickCount = 5;
     private const int MaxLegendCount = 6;
     private const double MinimumFloorLiters = 0.1;
-    private const double MaximumLiters = 6.0;
+    internal const long MaximumDisplayVolume = 6000000;
+    private const double MaximumLiters = MaximumDisplayVolume / 1000000.0;
     private static readonly double[] DefaultGridLevels = { 3.0, 2.0, 1.0, 0.75, 0.375 };
     private PurifierPlotViewModel currentViewModel;
 
@@ -19,14 +20,18 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
         int[] legendPurities = (int[])calculation.Purities.Clone();
         Array.Sort(legendPurities);
         double minimumLiters = FindMinimumLiters(calculation.YValues);
+        int minimumPurity = calculation.XValues[0][0];
+        int maximumPurity = FindMaximumPurity(calculation.XValues);
 
         currentViewModel = new PurifierPlotViewModel
         {
+            MinimumPurity = minimumPurity,
+            MaximumPurity = maximumPurity,
             XValues = calculation.XValues,
             YValues = calculation.YValues,
             Purities = calculation.Purities,
             LegendItems = BuildLegendItems(legendPurities),
-            XAxisTicks = BuildXAxisTicks(calculation.XValues[0], calculation.XValues[calculation.XValues.Length - 1]),
+            XAxisTicks = BuildXAxisTicks(minimumPurity, maximumPurity),
             GridLevels = BuildGridLevels(minimumLiters),
             MinimumLiters = minimumLiters,
             MaximumLiters = MaximumLiters,
@@ -35,6 +40,17 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
         };
 
         ViewModelChanged?.Invoke(currentViewModel);
+    }
+
+    private static int FindMaximumPurity(int[][] xValues)
+    {
+        int maximumPurity = xValues[0][xValues[0].Length - 1];
+        for (int series = 1; series < xValues.Length; series++)
+        {
+            maximumPurity = Math.Max(maximumPurity, xValues[series][xValues[series].Length - 1]);
+        }
+
+        return maximumPurity;
     }
 
     private PurifierLegendItemViewModel[] BuildLegendItems(int[] legendPurities)
