@@ -21,7 +21,7 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
         Array.Sort(legendPurities);
         double minimumLiters = FindMinimumLiters(calculation.YValues);
         int minimumPurity = calculation.XValues[0][0];
-        int maximumPurity = FindMaximumPurity(calculation.XValues);
+        int maximumPurity = FindMaximumPurity(calculation.Purities);
 
         currentViewModel = new PurifierPlotViewModel
         {
@@ -42,15 +42,15 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
         ViewModelChanged?.Invoke(currentViewModel);
     }
 
-    private static int FindMaximumPurity(int[][] xValues)
+    private static int FindMaximumPurity(int[] purities)
     {
-        int maximumPurity = xValues[0][xValues[0].Length - 1];
-        for (int series = 1; series < xValues.Length; series++)
+        int maximumPurity = purities[0];
+        for (int series = 1; series < purities.Length; series++)
         {
-            maximumPurity = Math.Max(maximumPurity, xValues[series][xValues[series].Length - 1]);
+            maximumPurity = Math.Max(maximumPurity, purities[series]);
         }
 
-        return maximumPurity;
+        return maximumPurity - 1;
     }
 
     private PurifierLegendItemViewModel[] BuildLegendItems(int[] legendPurities)
