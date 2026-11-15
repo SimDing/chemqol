@@ -16,8 +16,7 @@ internal static class PurifierPlotPatch
             var detailOutput = new PurifierPlotDetailPresenter();
             var plotInteractor = new PurifierCreatePlotInteractor(
                 new MachinePurifierMathAdapter(),
-                plotOutput,
-                PurifierPlotPresenter.MaximumDisplayVolume);
+                plotOutput);
             var detailInteractor = new PurifierCreatePlotDetailInteractor(
                 new MachinePurifierMathAdapter(),
                 detailOutput);

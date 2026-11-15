@@ -4,16 +4,14 @@ internal sealed class PurifierCreatePlotInteractor
 {
     private readonly IPurifierMath purifierMath;
     private readonly IPurifierPlotOutput output;
-    private readonly long maxVolume;
+    private readonly long maxVolume = 6000000;
 
     public PurifierCreatePlotInteractor(
         IPurifierMath purifierMath,
-        IPurifierPlotOutput output,
-        long maxVolume)
+        IPurifierPlotOutput output)
     {
         this.purifierMath = purifierMath;
         this.output = output;
-        this.maxVolume = maxVolume;
     }
 
     public void TryRefresh(PurifierMachineState state)
