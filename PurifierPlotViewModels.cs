@@ -14,7 +14,7 @@ internal sealed class PurifierLegendItemViewModel
 
 internal sealed class PurifierGridLevelViewModel
 {
-    public double Liters { get; set; }
+    public long Microliters { get; set; }
     public bool IsLabelVisible { get; set; }
     public bool IsGridLineVisible { get; set; }
     public string Label { get; set; }
@@ -27,14 +27,14 @@ internal sealed class PurifierPlotViewModel
     public int MinimumPurity { get; set; }
     public int MaximumPurity { get; set; }
     public int[][] XValues { get; set; }
-    public double[][] YValues { get; set; }
+    public long[][] YValues { get; set; }
     public int[] Purities { get; set; }
     public string[] SeriesColors { get; set; }
     public PurifierLegendItemViewModel[] LegendItems { get; set; }
     public PurifierXAxisTickViewModel[] XAxisTicks { get; set; }
     public PurifierGridLevelViewModel[] GridLevels { get; set; }
-    public double MinimumLiters { get; set; }
-    public double MaximumLiters { get; set; }
+    public long MinimumMicroliters { get; set; }
+    public long MaximumMicroliters { get; set; }
 }
 
 internal sealed class PurifierPlotDetailViewModel

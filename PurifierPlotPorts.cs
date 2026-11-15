@@ -25,7 +25,7 @@ internal interface IPurifierPlotOutput
 {
     event Action<PurifierPlotViewModel> ViewModelChanged;
 
-    void Present(PurifierCalculatorResult calculation, double maximumLiters);
+    void Present(PurifierCalculatorResult calculation, long maximumMicroliters);
 }
 
 internal interface IPurifierPlotDetailOutput

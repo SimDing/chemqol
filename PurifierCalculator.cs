@@ -17,7 +17,7 @@ internal sealed class PurifierCalculatorInput
 internal sealed class PurifierCalculatorResult
 {
     public int[][] XValues { get; set; }
-    public double[][] YValues { get; set; }
+    public long[][] YValues { get; set; }
     public int[] Purities { get; set; }
 }
 
@@ -25,7 +25,7 @@ internal sealed class PurifierDetailCalculationResult
 {
     public int InputPurity { get; set; }
     public int[] Purities { get; set; }
-    public double[] Capacities { get; set; }
+    public long[] Capacities { get; set; }
 }
 
 internal static class PurifierCalculator
@@ -53,26 +53,19 @@ internal static class PurifierCalculator
         int[] targetPurities = GetTargetPurities(machineMaximum);
 
         var xValues = new int[targetPurities.Length][];
-        var yValues = new double[targetPurities.Length][];
+        var yValues = new long[targetPurities.Length][];
         for (int series = 0; series < targetPurities.Length; series++)
         {
             int maximumInputPurity = Math.Max(
                 MinPurity,
                 PurityAtMaxVolume(input, purifierMath, targetPurities[series]));
             xValues[series] = new int[PointCount];
-            yValues[series] = new double[PointCount];
+            yValues[series] = new long[PointCount];
             for (int point = 0; point < PointCount; point++)
             {
                 int inputPurity = MinPurity + (maximumInputPurity - MinPurity) * point / (PointCount - 1);
                 xValues[series][point] = inputPurity;
-                if (inputPurity <= targetPurities[series])
-                {
-                    yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance, purifierMath) / 1000000.0;
-                }
-                else
-                {
-                    yValues[series][point] = double.NaN;
-                }
+                yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance, purifierMath);
             }
         }
 
@@ -120,19 +113,22 @@ internal static class PurifierCalculator
         }
 
         int[] purities = GetTargetPurities(purifierMath.GetMaxPurityCap(input.Quality));
-        var capacities = new double[purities.Length];
+        var validPurities = new List<int>(purities.Length);
+        var capacities = new List<long>(purities.Length);
         for (int series = 0; series < purities.Length; series++)
         {
-            capacities[series] = inputPurity < purities[series]
-                ? MaxVolumeForTarget(inputPurity, purities[series], input.Performance, purifierMath) / 1000000.0
-                : double.NaN;
+            if (inputPurity < purities[series])
+            {
+                validPurities.Add(purities[series]);
+                capacities.Add(MaxVolumeForTarget(inputPurity, purities[series], input.Performance, purifierMath));
+            }
         }
 
         return new PurifierDetailCalculationResult
         {
             InputPurity = inputPurity,
-            Purities = purities,
-            Capacities = capacities
+            Purities = validPurities.ToArray(),
+            Capacities = capacities.ToArray()
         };
     }
 

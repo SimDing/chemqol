@@ -26,7 +26,7 @@ internal sealed class PurifierCreatePlotInteractor
             },
             purifierMath);
 
-        output.Present(result, maxVolume / 1000000.0);
+        output.Present(result, maxVolume);
     }
 }
 

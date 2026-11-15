@@ -3,21 +3,26 @@ using System.Collections.Generic;
 
 internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
 {
+    private const long _1_L = 1000000;
+    private const long _10_L = 10000000;
+    private const long _1_mL = 1000;
+    private const long _10_mL = 10000;
+
     private const int MinTickPurity = 8000;
     private const int TickPurityStep = 500;
     private const int MaxTickCount = 5;
     private const int MaxLegendCount = 6;
-    private const double MinimumFloorLiters = 0.1;
-    private static readonly double[] DefaultGridLevels = { 3.0, 2.0, 1.0, 0.75, 0.375 };
+    private const long MinimumFloorMicroliters = 100000;
+    private static readonly long[] DefaultGridLevelsMicroliters = { 3000000, 2000000, 1000000, 750000, 375000 };
     private PurifierPlotViewModel currentViewModel;
 
     public event Action<PurifierPlotViewModel> ViewModelChanged;
 
-    public void Present(PurifierCalculatorResult calculation, double maximumLiters)
+    public void Present(PurifierCalculatorResult calculation, long maximumMicroliters)
     {
         int[] legendPurities = (int[])calculation.Purities.Clone();
         Array.Sort(legendPurities);
-        double minimumLiters = FindMinimumLiters(calculation.YValues, maximumLiters);
+        long minimumMicroliters = FindMinimumMicroliters(calculation.YValues, maximumMicroliters);
         int minimumPurity = calculation.XValues[0][0];
         int maximumPurity = FindMaximumPurity(calculation.Purities);
 
@@ -33,9 +38,9 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
             SeriesColors = BuildSeriesColors(calculation.Purities),
             LegendItems = BuildLegendItems(legendPurities, calculation.Purities),
             XAxisTicks = BuildXAxisTicks(minimumPurity, maximumPurity),
-            GridLevels = BuildGridLevels(minimumLiters, maximumLiters),
-            MinimumLiters = minimumLiters,
-            MaximumLiters = maximumLiters
+            GridLevels = BuildGridLevels(minimumMicroliters, maximumMicroliters),
+            MinimumMicroliters = minimumMicroliters,
+            MaximumMicroliters = maximumMicroliters
         };
 
         ViewModelChanged?.Invoke(currentViewModel);
@@ -127,73 +132,97 @@ internal sealed class PurifierPlotPresenter : IPurifierPlotOutput
         return viewModels;
     }
 
-    private PurifierGridLevelViewModel[] BuildGridLevels(double minimumLiters, double maximumLiters)
+    private PurifierGridLevelViewModel[] BuildGridLevels(long minimumMicroliters, long maximumMicroliters)
     {
-        var gridLevels = new PurifierGridLevelViewModel[DefaultGridLevels.Length + 2];
+        var gridLevels = new PurifierGridLevelViewModel[DefaultGridLevelsMicroliters.Length + 2];
         gridLevels[0] = new PurifierGridLevelViewModel
         {
-            Liters = maximumLiters,
+            Microliters = maximumMicroliters,
             IsLabelVisible = true,
             IsGridLineVisible = false,
-            Label = FormatLiters(maximumLiters)
+            Label = FormatLiters(maximumMicroliters)
         };
 
-        for (int i = 0; i < DefaultGridLevels.Length; i++)
+        for (int i = 0; i < DefaultGridLevelsMicroliters.Length; i++)
         {
-            double liters = DefaultGridLevels[i];
-            bool visible = liters >= minimumLiters * 4.0 / 3.0 && liters <= maximumLiters * 3.0 / 4.0;
+            long microliters = DefaultGridLevelsMicroliters[i];
+            bool visible = microliters >= minimumMicroliters * 4L / 3L
+                && microliters <= maximumMicroliters * 3L / 4L;
             gridLevels[i + 1] = new PurifierGridLevelViewModel
             {
-                Liters = liters,
+                Microliters = microliters,
                 IsLabelVisible = visible,
                 IsGridLineVisible = visible,
-                Label = FormatGridLevel(liters)
+                Label = FormatLiters(microliters)
             };
         }
 
         gridLevels[gridLevels.Length - 1] = new PurifierGridLevelViewModel
         {
-            Liters = minimumLiters,
+            Microliters = minimumMicroliters,
             IsLabelVisible = true,
             IsGridLineVisible = false,
-            Label = FormatLiters(minimumLiters)
+            Label = FormatLiters(minimumMicroliters)
         };
 
         return gridLevels;
     }
 
-    private double FindMinimumLiters(double[][] values, double maximumLiters)
+    private long FindMinimumMicroliters(long[][] values, long maximumMicroliters)
     {
-        double minimumLiters = double.PositiveInfinity;
+        long minimumMicroliters = long.MaxValue;
         for (int series = 0; series < values.Length; series++)
         {
             for (int point = 0; point < values[series].Length; point++)
             {
-                if (!double.IsNaN(values[series][point]))
-                {
-                    minimumLiters = Math.Min(minimumLiters, Math.Max(MinimumFloorLiters, values[series][point]));
-                }
+                minimumMicroliters = Math.Min(
+                    minimumMicroliters,
+                    Math.Max(MinimumFloorMicroliters, values[series][point]));
             }
         }
 
-        if (double.IsInfinity(minimumLiters) || minimumLiters >= maximumLiters)
+        if (minimumMicroliters == long.MaxValue || minimumMicroliters >= maximumMicroliters)
         {
-            return MinimumFloorLiters;
+            return MinimumFloorMicroliters;
         }
 
-        return minimumLiters;
+        return minimumMicroliters;
     }
 
-    private static string FormatLiters(double liters)
+    public static string FormatLiters(long microliters)
     {
-        return liters.ToString(liters < 1.0 ? "0.###" : "0.##")  + "L";
-    }
+        // The target here is the we can never display more than the given amount
+        // and also display in a compact way.
+        
+        // Truncate all but the 4 most significant digits.
+        long remainingDigits = microliters;
+        int multiplier = 1;
 
-    private static string FormatGridLevel(double liters)
-    {
-        return liters < 1.0
-            ? (liters * 1000.0).ToString("0.###") + "ml"
-            : FormatLiters(liters);
+        while (remainingDigits >= 10000 && multiplier < _1_L)
+        {
+            remainingDigits /= 10;
+            multiplier *= 10;
+        }
+        
+        double amount = microliters;
+        long reconstructed = remainingDigits * multiplier;
+        string unit = " uL";
+
+        // Diplay with larger prefixes than uL, if either
+        // - the displayed amount is greater or equal 10
+        // - the diplayed amount is single digit.
+        if (reconstructed >= _10_L || reconstructed > _1_L && reconstructed % _1_L == 0)
+        {
+            amount = remainingDigits / (double) (_1_L / multiplier);
+            unit = " L";
+        }
+        else if (reconstructed >= _10_mL || reconstructed > _1_mL && reconstructed % _1_mL == 0)
+        {
+            amount = remainingDigits / (double) (_1_mL / multiplier);
+            unit = " mL";
+        }
+
+        return amount.ToString("0.##") + unit;
     }
 }
 
@@ -210,11 +239,7 @@ internal sealed class PurifierPlotDetailPresenter : IPurifierPlotDetailOutput
 
         for (int series = 0; series < calculation.Purities.Length; series++)
         {
-            double capacity = calculation.Capacities[series];
-            if (!double.IsNaN(capacity))
-            {
-                detailLines.Add((calculation.Purities[series] / 100.0).ToString("0.##") + "% " + FormatReadingLiters(capacity) + "L");
-            }
+            detailLines.Add((calculation.Purities[series] / 100.0).ToString("0.##") + "% " + PurifierPlotPresenter.FormatLiters(calculation.Capacities[series]));
         }
 
         DetailChanged?.Invoke(new PurifierPlotDetailViewModel
@@ -233,20 +258,6 @@ internal sealed class PurifierPlotDetailPresenter : IPurifierPlotDetailOutput
             Lines = Array.Empty<string>(),
             IsVisible = false
         });
-    }
-
-    private static string FormatReadingLiters(double liters)
-    {
-        if (liters <= 0.0)
-        {
-            return "0 ";
-        }
-
-        decimal value = (decimal)liters;
-        int exponent = (int)Math.Floor(Math.Log10(liters));
-        decimal placeValue = (decimal)Math.Pow(10.0, exponent - 2);
-        decimal roundedDown = decimal.Floor(value / placeValue) * placeValue;
-        return roundedDown.ToString("G");
     }
 
 }

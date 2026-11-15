@@ -38,7 +38,6 @@ internal sealed class PurifierPlot : PixelElement
     private const int PlotTop = 10;
     private const int PlotWidth = 184;
     private const int PlotHeight = 82;
-    private const int PointCount = PurifierCalculator.PointCount;
     private const int TooltipWidth = 56;
     private const int TooltipLineHeight = 7;
     private const int TooltipPadding = 2;
@@ -46,7 +45,7 @@ internal sealed class PurifierPlot : PixelElement
 
     private readonly PurifierPlotController controller;
     private readonly TreeNodeRender plotViewport;
-    private readonly TreeNodeRender[] lineSegments = new TreeNodeRender[SeriesCount * (PointCount - 1)];
+    private readonly List<TreeNodeRender> lineSegments = new List<TreeNodeRender>();
     private readonly TreeNodeRender yAxis;
     private readonly TreeNodeRender topAxis;
     private readonly TreeNodeRender rightAxis;
@@ -87,13 +86,6 @@ internal sealed class PurifierPlot : PixelElement
         plotViewport.rectTransform.sizeDelta = new Vector2(PlotWidth + 1, PlotHeight + 1);
         RectMask2D plotMask = plotViewport.mask ?? plotViewport.gameObject.AddComponent<RectMask2D>();
         plotMask.enabled = true;
-
-        for (int i = 0; i < lineSegments.Length; i++)
-        {
-            lineSegments[i] = CreateBlock(Color.white, plotViewport);
-            lineSegments[i].rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            lineSegments[i].image.enabled = false;
-        }
 
         hoverSurface = CreateBlock(new Color(0f, 0f, 0f, 0f), plotViewport);
         hoverSurface.rectTransform.anchorMin = Vector2.zero;
@@ -149,7 +141,7 @@ internal sealed class PurifierPlot : PixelElement
         UpdateAxisTitle(ref yAxisTitle, viewModel.YAxisTitle, 0, 0, PlotLeft - 2, 9);
         UpdateAxisTitle(ref xAxisTitle, viewModel.XAxisTitle, PlotLeft + 29, PlotTop + PlotHeight + 8, 118, 9);
         int[][] xValues = viewModel.XValues;
-        double[][] values = viewModel.YValues;
+        long[][] yValues = viewModel.YValues;
         int minimumPurity = viewModel.MinimumPurity;
         int maximumPurity = viewModel.MaximumPurity;
         UpdateXAxisLabels(viewModel.XAxisTicks, minimumPurity, maximumPurity);
@@ -165,9 +157,9 @@ internal sealed class PurifierPlot : PixelElement
             }
         }
 
-        double minimumLiters = viewModel.MinimumLiters;
-        double maximumLiters = viewModel.MaximumLiters;
-        double logYRange = Math.Log(maximumLiters / minimumLiters);
+        long minimumMicroliters = viewModel.MinimumMicroliters;
+        long maximumMicroliters = viewModel.MaximumMicroliters;
+        double logYRange = Math.Log((double)maximumMicroliters / minimumMicroliters);
 
         MachineryStyle.Place(yAxis, PlotLeft, PlotTop, 1, PlotHeight + 1);
         MachineryStyle.Place(rightAxis, PlotLeft + PlotWidth, PlotTop, 1, PlotHeight + 1);
@@ -181,42 +173,50 @@ internal sealed class PurifierPlot : PixelElement
             MachineryText label = yGridLabels[i];
             label.handler.gameObject.SetActive(gridLevel.IsLabelVisible);
             label.SetText(gridLevel.Label);
-            int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log(gridLevel.Liters / minimumLiters) / logYRange * PlotHeight));
+            int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log((double)gridLevel.Microliters / minimumMicroliters) / logYRange * PlotHeight));
             MachineryStyle.Place(label.handler, 0, PlotTop + gridY - 4, label.widthPixels, label.heightPixels);
             TreeNodeRender gridLine = yGridLines[i];
             gridLine.image.enabled = gridLevel.IsGridLineVisible;
             MachineryStyle.Place(gridLine, PlotLeft, PlotTop + gridY, PlotWidth + 1, 1);
         }
 
+        EnsureLineSegmentCount(viewModel);
         int segmentIndex = 0;
-        for (int series = 0; series < SeriesCount; series++)
+        for (int series = 0; series < xValues.Length; series++)
         {
-            for (int point = 0; point < PointCount - 1; point++)
+            for (int point = 0; point < xValues[series].Length - 1; point++)
             {
                 TreeNodeRender segment = lineSegments[segmentIndex++];
-                if (series >= values.Length || series >= xValues.Length || point >= values[series].Length - 1 || point >= xValues[series].Length - 1)
-                {
-                    segment.image.enabled = false;
-                    continue;
-                }
-
-                double[] capacities = values[series];
-                if (double.IsNaN(capacities[point]) || double.IsNaN(capacities[point + 1]))
-                {
-                    segment.image.enabled = false;
-                    continue;
-                }
-
                 float xRange = Math.Max(1, maximumPurity - minimumPurity);
                 float x1 = (float)PlotWidth * (xValues[series][point] - minimumPurity) / xRange;
                 float x2 = (float)PlotWidth * (xValues[series][point + 1] - minimumPurity) / xRange;
-                float y1 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point]) / minimumLiters) / logYRange * PlotHeight);
-                float y2 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point + 1]) / minimumLiters) / logYRange * PlotHeight);
+                float y1 = PlotHeight - (float)(Math.Log((double)Math.Max(minimumMicroliters, yValues[series][point]) / minimumMicroliters) / logYRange * PlotHeight);
+                float y2 = PlotHeight - (float)(Math.Log((double)Math.Max(minimumMicroliters, yValues[series][point + 1]) / minimumMicroliters) / logYRange * PlotHeight);
                 segment.image.color = MachineryStyle.Hex(viewModel.SeriesColors[series]);
                 segment.image.enabled = true;
                 PlaceSegment(segment, x1, y1, x2, y2);
             }
         }
+    }
+
+    private void EnsureLineSegmentCount(PurifierPlotViewModel viewModel)
+    {
+        int lineSegmentCount = CountNecessaryLineSegments(viewModel);
+        EnsureBlockCount(lineSegments, lineSegmentCount, () => {
+            var block = CreateBlock(Color.white, plotViewport);
+            block.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            return block;
+        });
+    }
+
+    private int CountNecessaryLineSegments(PurifierPlotViewModel viewModel)
+    {
+        int count = 0;
+        foreach (int[] series in viewModel.XValues)
+        {
+            count += series.Length - 1;
+        }
+        return count;
     }
 
     private void UpdateXAxisLabels(PurifierXAxisTickViewModel[] ticks, int minimumPurity, int maximumPurity)
@@ -414,17 +414,22 @@ internal sealed class PurifierPlot : PixelElement
         }
     }
 
-    private void EnsureGridLineCount(List<TreeNodeRender> gridLines, int count)
+    private void EnsureBlockCount(List<TreeNodeRender> blocks, int count, Func<TreeNodeRender> ctor)
     {
-        while (gridLines.Count < count)
+        while (blocks.Count < count)
         {
-            gridLines.Add(CreateBlock(MachineryStyle.Hex("77776f", 0.35f)));
+            blocks.Add(ctor());
         }
 
-        for (int i = count; i < gridLines.Count; i++)
+        for (int i = count; i < blocks.Count; i++)
         {
-            gridLines[i].image.enabled = false;
+            blocks[i].image.enabled = false;
         }
+    }
+
+    private void EnsureGridLineCount(List<TreeNodeRender> gridLines, int count)
+    {
+        EnsureBlockCount(gridLines, count, () => CreateBlock(MachineryStyle.Hex("77776f", 0.35f)));
     }
 
     private void CreateLegend(int index)
