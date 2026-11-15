@@ -43,23 +43,21 @@ internal sealed class PurifierPlot : PixelElement
     private const int TooltipLineHeight = 7;
     private const int TooltipPadding = 2;
     private const int SeriesCount = 6;
-    private static readonly Color[] SeriesColors =
-    {
-        MachineryStyle.Hex("3d823f"),
-        MachineryStyle.Hex("7ab053"),
-        MachineryStyle.Hex("ccb987"),
-        MachineryStyle.Hex("ba8953"),
-        MachineryStyle.Hex("b26b4e"),
-        MachineryStyle.Hex("78c9df")
-    };
 
     private readonly PurifierPlotController controller;
     private readonly TreeNodeRender plotViewport;
     private readonly TreeNodeRender[] lineSegments = new TreeNodeRender[SeriesCount * (PointCount - 1)];
-    private readonly TreeNodeRender[] axes = new TreeNodeRender[8];
-    private readonly List<MachineryText> labels = new List<MachineryText>();
+    private readonly TreeNodeRender yAxis;
+    private readonly TreeNodeRender topAxis;
+    private readonly TreeNodeRender rightAxis;
+    private readonly TreeNodeRender bottomAxis;
+    private readonly List<MachineryText> xGridLabels = new List<MachineryText>();
+    private readonly List<MachineryText> yGridLabels = new List<MachineryText>();
+    private readonly List<TreeNodeRender> yGridLines = new List<TreeNodeRender>();
     private readonly TreeNodeRender[] legendMarkers = new TreeNodeRender[SeriesCount];
     private readonly MachineryText[] legendPurityLabels = new MachineryText[SeriesCount];
+    private MachineryText yAxisTitle;
+    private MachineryText xAxisTitle;
     private readonly TreeNodeRender hoverSurface;
     private readonly TreeNodeRender hoverLine;
     private readonly TreeNodeRender tooltipBackground;
@@ -105,27 +103,13 @@ internal sealed class PurifierPlot : PixelElement
         hoverSurface.image.raycastTarget = true;
         hoverSurface.gameObject.AddComponent<PurifierPlotHover>().Initialize(this);
 
-        for (int i = 0; i < axes.Length; i++)
-        {
-            axes[i] = CreateBlock(MachineryStyle.Hex("77776f"));
-        }
+        yAxis = CreateBlock(MachineryStyle.Hex("77776f"));
+        bottomAxis = CreateBlock(MachineryStyle.Hex("77776f"));
+        topAxis = CreateBlock(MachineryStyle.Hex("77776f", 0.35f));
+        rightAxis = CreateBlock(MachineryStyle.Hex("77776f", 0.35f));
 
         hoverLine = CreateBlock(MachineryStyle.Hex("77776f", 0.35f));
         hoverLine.image.enabled = false;
-
-        AddLabel("L/cycle", 0, 0, PlotLeft - 2, 9);
-        for (int i = 0; i < 5; i++)
-        {
-            AddLabel("", 0, PlotTop + PlotHeight + 1, 20, 8);
-        }
-        AddLabel("Input purity (%)", PlotLeft + 29, PlotTop + PlotHeight + 8, 118, 9);
-        AddLabel("3L", 0, 0, PlotLeft - 3, 8);
-        AddLabel("2L", 0, 0, PlotLeft - 3, 8);
-        AddLabel("1L", 0, 0, PlotLeft - 3, 8);
-        AddLabel("750ml", 0, 0, PlotLeft - 3, 8);
-        AddLabel("375ml", 0, 0, PlotLeft - 3, 8);
-        AddLabel("6L", 0, 0, PlotLeft - 3, 8);
-        AddLabel("", 0, 0, PlotLeft - 3, 8);
 
         for (int i = 0; i < SeriesCount; i++)
         {
@@ -162,9 +146,10 @@ internal sealed class PurifierPlot : PixelElement
 
     private void Draw(PurifierPlotViewModel viewModel)
     {
+        UpdateAxisTitle(ref yAxisTitle, viewModel.YAxisTitle, 0, 0, PlotLeft - 2, 9);
+        UpdateAxisTitle(ref xAxisTitle, viewModel.XAxisTitle, PlotLeft + 29, PlotTop + PlotHeight + 8, 118, 9);
         int[][] xValues = viewModel.XValues;
         double[][] values = viewModel.YValues;
-        int[] purities = viewModel.Purities;
         int minimumPurity = viewModel.MinimumPurity;
         int maximumPurity = viewModel.MaximumPurity;
         UpdateXAxisLabels(viewModel.XAxisTicks, minimumPurity, maximumPurity);
@@ -175,7 +160,7 @@ internal sealed class PurifierPlot : PixelElement
             legendPurityLabels[i].handler.gameObject.SetActive(legendItem.IsVisible);
             if (legendItem.IsVisible)
             {
-                legendMarkers[i].image.color = GetSeriesColor(legendItem.Purity);
+                legendMarkers[i].image.color = MachineryStyle.Hex(viewModel.SeriesColors[legendItem.SeriesIndex]);
                 legendPurityLabels[i].SetText(legendItem.Label);
             }
         }
@@ -184,24 +169,23 @@ internal sealed class PurifierPlot : PixelElement
         double maximumLiters = viewModel.MaximumLiters;
         double logYRange = Math.Log(maximumLiters / minimumLiters);
 
-        MachineryStyle.Place(axes[0], PlotLeft, PlotTop, 1, PlotHeight + 1);
-        MachineryStyle.Place(axes[6], PlotLeft, PlotTop, PlotWidth + 1, 1);
-        MachineryStyle.Place(axes[7], PlotLeft, PlotTop + PlotHeight, PlotWidth + 1, 1);
-        axes[6].image.color = MachineryStyle.Hex("77776f", 0.35f);
-        axes[7].image.color = MachineryStyle.Hex("77776f", 0.35f);
-        SetLabelText(12, viewModel.MaximumLitersLabel);
-        SetLabelText(13, viewModel.MinimumLitersLabel);
-        MachineryStyle.Place(labels[12].handler, 0, PlotTop - 4, labels[12].widthPixels, labels[12].heightPixels);
-        MachineryStyle.Place(labels[13].handler, 0, PlotTop + PlotHeight - 4, labels[13].widthPixels, labels[13].heightPixels);
+        MachineryStyle.Place(yAxis, PlotLeft, PlotTop, 1, PlotHeight + 1);
+        MachineryStyle.Place(rightAxis, PlotLeft + PlotWidth, PlotTop, 1, PlotHeight + 1);
+        MachineryStyle.Place(topAxis, PlotLeft, PlotTop, PlotWidth + 1, 1);
+        MachineryStyle.Place(bottomAxis, PlotLeft, PlotTop + PlotHeight, PlotWidth + 1, 1);
+        EnsureLabelCount(yGridLabels, viewModel.GridLevels.Length, 0, 0, PlotLeft - 3, 8);
+        EnsureGridLineCount(yGridLines, viewModel.GridLevels.Length);
         for (int i = 0; i < viewModel.GridLevels.Length; i++)
         {
             PurifierGridLevelViewModel gridLevel = viewModel.GridLevels[i];
-            axes[i + 1].image.enabled = gridLevel.IsVisible;
-            labels[i + 7].handler.gameObject.SetActive(gridLevel.IsVisible);
+            MachineryText label = yGridLabels[i];
+            label.handler.gameObject.SetActive(gridLevel.IsLabelVisible);
+            label.SetText(gridLevel.Label);
             int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log(gridLevel.Liters / minimumLiters) / logYRange * PlotHeight));
-            MachineryStyle.Place(axes[i + 1], PlotLeft, PlotTop + gridY, PlotWidth + 1, 1);
-            axes[i + 1].image.color = MachineryStyle.Hex("77776f", 0.35f);
-            MachineryStyle.Place(labels[i + 7].handler, 0, PlotTop + gridY - 4, labels[i + 7].widthPixels, labels[i + 7].heightPixels);
+            MachineryStyle.Place(label.handler, 0, PlotTop + gridY - 4, label.widthPixels, label.heightPixels);
+            TreeNodeRender gridLine = yGridLines[i];
+            gridLine.image.enabled = gridLevel.IsGridLineVisible;
+            MachineryStyle.Place(gridLine, PlotLeft, PlotTop + gridY, PlotWidth + 1, 1);
         }
 
         int segmentIndex = 0;
@@ -228,7 +212,7 @@ internal sealed class PurifierPlot : PixelElement
                 float x2 = (float)PlotWidth * (xValues[series][point + 1] - minimumPurity) / xRange;
                 float y1 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point]) / minimumLiters) / logYRange * PlotHeight);
                 float y2 = PlotHeight - (float)(Math.Log(Math.Max(minimumLiters, capacities[point + 1]) / minimumLiters) / logYRange * PlotHeight);
-                segment.image.color = GetSeriesColor(purities[series]);
+                segment.image.color = MachineryStyle.Hex(viewModel.SeriesColors[series]);
                 segment.image.enabled = true;
                 PlaceSegment(segment, x1, y1, x2, y2);
             }
@@ -237,10 +221,11 @@ internal sealed class PurifierPlot : PixelElement
 
     private void UpdateXAxisLabels(PurifierXAxisTickViewModel[] ticks, int minimumPurity, int maximumPurity)
     {
-        for (int i = 0; i < 5; i++)
+        EnsureLabelCount(xGridLabels, ticks.Length, 0, PlotTop + PlotHeight + 1, 20, 8);
+        for (int i = 0; i < ticks.Length; i++)
         {
             PurifierXAxisTickViewModel tick = ticks[i];
-            labels[i + 1].handler.gameObject.SetActive(tick.IsVisible);
+            xGridLabels[i].handler.gameObject.SetActive(tick.IsVisible);
             if (!tick.IsVisible)
             {
                 continue;
@@ -248,9 +233,9 @@ internal sealed class PurifierPlot : PixelElement
 
             int purity = tick.Purity;
             float fraction = (float)(purity - minimumPurity) / (maximumPurity - minimumPurity);
-            int x = PlotLeft + Mathf.RoundToInt(fraction * PlotWidth) - labels[i + 1].widthPixels / 2;
-            MachineryStyle.Place(labels[i + 1].handler, x, PlotTop + PlotHeight + 1, labels[i + 1].widthPixels, labels[i + 1].heightPixels);
-            labels[i + 1].SetText(tick.Label);
+            int x = PlotLeft + Mathf.RoundToInt(fraction * PlotWidth) - xGridLabels[i].widthPixels / 2;
+            MachineryStyle.Place(xGridLabels[i].handler, x, PlotTop + PlotHeight + 1, xGridLabels[i].widthPixels, xGridLabels[i].heightPixels);
+            xGridLabels[i].SetText(tick.Label);
         }
     }
 
@@ -384,7 +369,7 @@ internal sealed class PurifierPlot : PixelElement
         float deltaY = y1 - y2;
         float length = Mathf.Sqrt(deltaX * deltaX + deltaY * deltaY);
         node.rectTransform.anchoredPosition = new Vector2((x1 + x2) / 2f, -(y1 + y2) / 2f);
-        node.rectTransform.sizeDelta = new Vector2(Mathf.Max(1f, length + 1f), 1f);
+        node.rectTransform.sizeDelta = new Vector2(Mathf.Max(1f, length), 1f);
         node.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(deltaY, deltaX) * Mathf.Rad2Deg);
     }
 
@@ -396,44 +381,63 @@ internal sealed class PurifierPlot : PixelElement
         return node;
     }
 
-    private void AddLabel(string text, float x, float y, int width, int height)
+    private MachineryText CreateLabel(string text, float x, float y, int width, int height)
     {
         var label = new MachineryText(text, 5);
         label.ResizePixels(width, height);
         label.handler.SetParent(handler);
         MachineryStyle.Place(label.handler, Mathf.RoundToInt(x), Mathf.RoundToInt(y), label.widthPixels, label.heightPixels);
-        labels.Add(label);
+        return label;
+    }
+
+    private void UpdateAxisTitle(ref MachineryText label, string text, float x, float y, int width, int height)
+    {
+        if (label == null)
+        {
+            label = CreateLabel(text, x, y, width, height);
+            return;
+        }
+
+        label.SetText(text);
+    }
+
+    private void EnsureLabelCount(List<MachineryText> labels, int count, float x, float y, int width, int height)
+    {
+        while (labels.Count < count)
+        {
+            labels.Add(CreateLabel("", x, y, width, height));
+        }
+
+        for (int i = count; i < labels.Count; i++)
+        {
+            labels[i].handler.gameObject.SetActive(false);
+        }
+    }
+
+    private void EnsureGridLineCount(List<TreeNodeRender> gridLines, int count)
+    {
+        while (gridLines.Count < count)
+        {
+            gridLines.Add(CreateBlock(MachineryStyle.Hex("77776f", 0.35f)));
+        }
+
+        for (int i = count; i < gridLines.Count; i++)
+        {
+            gridLines[i].image.enabled = false;
+        }
     }
 
     private void CreateLegend(int index)
     {
         int x = 5 + index * 43;
         int y = 110;
-        legendMarkers[index] = CreateBlock(SeriesColors[index]);
+        legendMarkers[index] = CreateBlock(Color.white);
         MachineryStyle.Place(legendMarkers[index], x, y + 3, 7, 2);
         legendPurityLabels[index] = new MachineryText("", 5);
         legendPurityLabels[index].ResizePixels(34, 8);
         legendPurityLabels[index].handler.SetParent(handler);
         legendPurityLabels[index].handler.image.raycastTarget = false;
         MachineryStyle.Place(legendPurityLabels[index].handler, x + 9, y, legendPurityLabels[index].widthPixels, legendPurityLabels[index].heightPixels);
-    }
-
-    private static Color GetSeriesColor(int purity)
-    {
-        switch (purity)
-        {
-            case 9990: return MachineryStyle.Hex("3d823f");
-            case 9900: return MachineryStyle.Hex("7ab053");
-            case 9800: return MachineryStyle.Hex("ccb987");
-            case 9600: return MachineryStyle.Hex("ba8953");
-            case 9000: return MachineryStyle.Hex("b26b4e");
-            default: return MachineryStyle.Hex("78c9df");
-        }
-    }
-
-    private void SetLabelText(int index, string text)
-    {
-        labels[index].SetText(text);
     }
 
     public void ResizePixels(int width, int height)
