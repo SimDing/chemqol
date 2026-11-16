@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <GameDirFromEnv Condition="'$(GameManagedPath)' == '' and Exists('$(MSBuildProjectDirectory)/.env')">$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildProjectDirectory)/.env')), '(?m)^\s*GAME_DIR\s*=\s*([^\r\n#]+)').Groups[1].Value.Trim())</GameDirFromEnv>
+    <GameManagedPath Condition="'$(GameManagedPath)' == '' and '$(GameDirFromEnv)' != ''">$(GameDirFromEnv)/Probably Stolen_Data/Managed</GameManagedPath>
     <GameManagedPath Condition="'$(GameManagedPath)' == ''">$(MSBuildProjectDirectory)/Probably Stolen_Data/Managed</GameManagedPath>
   </PropertyGroup>
 
