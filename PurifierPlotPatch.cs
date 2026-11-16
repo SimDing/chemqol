@@ -159,7 +159,6 @@ internal sealed class PurifierPlot : PixelElement
 
         long minimumMicroliters = viewModel.MinimumMicroliters;
         long maximumMicroliters = viewModel.MaximumMicroliters;
-        double logYRange = Math.Log((double)maximumMicroliters / minimumMicroliters);
 
         MachineryStyle.Place(yAxis, PlotLeft, PlotTop, 1, PlotHeight + 1);
         MachineryStyle.Place(rightAxis, PlotLeft + PlotWidth, PlotTop, 1, PlotHeight + 1);
@@ -173,7 +172,7 @@ internal sealed class PurifierPlot : PixelElement
             MachineryText label = yGridLabels[i];
             label.handler.gameObject.SetActive(gridLevel.IsLabelVisible);
             label.SetText(gridLevel.Label);
-            int gridY = PlotHeight - Mathf.RoundToInt((float)(Math.Log((double)gridLevel.Microliters / minimumMicroliters) / logYRange * PlotHeight));
+            int gridY = Mathf.RoundToInt(GetYPosition(gridLevel.Microliters, minimumMicroliters, maximumMicroliters));
             MachineryStyle.Place(label.handler, 0, PlotTop + gridY - 4, label.widthPixels, label.heightPixels);
             TreeNodeRender gridLine = yGridLines[i];
             gridLine.image.enabled = gridLevel.IsGridLineVisible;
@@ -190,13 +189,24 @@ internal sealed class PurifierPlot : PixelElement
                 float xRange = Math.Max(1, maximumPurity - minimumPurity);
                 float x1 = (float)PlotWidth * (xValues[series][point] - minimumPurity) / xRange;
                 float x2 = (float)PlotWidth * (xValues[series][point + 1] - minimumPurity) / xRange;
-                float y1 = PlotHeight - (float)(Math.Log((double)Math.Max(minimumMicroliters, yValues[series][point]) / minimumMicroliters) / logYRange * PlotHeight);
-                float y2 = PlotHeight - (float)(Math.Log((double)Math.Max(minimumMicroliters, yValues[series][point + 1]) / minimumMicroliters) / logYRange * PlotHeight);
+                float y1 = GetYPosition(Math.Max(minimumMicroliters, yValues[series][point]), minimumMicroliters, maximumMicroliters);
+                float y2 = GetYPosition(Math.Max(minimumMicroliters, yValues[series][point + 1]), minimumMicroliters, maximumMicroliters);
                 segment.image.color = MachineryStyle.Hex(viewModel.SeriesColors[series]);
                 segment.image.enabled = true;
                 PlaceSegment(segment, x1, y1, x2, y2);
             }
         }
+    }
+
+    private float GetYPosition(long microliters, long minimumMicroliters, long maximumMicroliters)
+    {
+        if (maximumMicroliters <= minimumMicroliters)
+        {
+            return PlotHeight;
+        }
+
+        float fraction = (float)(microliters - minimumMicroliters) / (maximumMicroliters - minimumMicroliters);
+        return PlotHeight - fraction * PlotHeight;
     }
 
     private void EnsureLineSegmentCount(PurifierPlotViewModel viewModel)
@@ -369,7 +379,7 @@ internal sealed class PurifierPlot : PixelElement
         float deltaY = y1 - y2;
         float length = Mathf.Sqrt(deltaX * deltaX + deltaY * deltaY);
         node.rectTransform.anchoredPosition = new Vector2((x1 + x2) / 2f, -(y1 + y2) / 2f);
-        node.rectTransform.sizeDelta = new Vector2(Mathf.Max(1f, length), 1f);
+        node.rectTransform.sizeDelta = new Vector2(length, 1f);
         node.rectTransform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(deltaY, deltaX) * Mathf.Rad2Deg);
     }
 

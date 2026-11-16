@@ -55,4 +55,33 @@ internal sealed class MachinePurifierMathAdapter : IPurifierMath
             + MachinePurifier.BUDGET_FLAT_UL;
         return (long)(baseBudget * multiplier);
     }
+
+    public List<int> GetSpecialPurities()
+    {
+        if (ChemQOLConfig.ExponentialPurifierBudget)
+        {
+            return [];
+        }
+        try
+        {
+            return GetDirtBonusPurities();
+        }
+        catch (Exception ex)
+        {
+            ModEntry.Logger.Error($"Failed to get dirt bonus anchor points: {ex}");
+            return [];
+        }
+    }
+
+    private List<int> GetDirtBonusPurities()
+    {
+        (int purity, double bonus)[] dirtBonusCurve =
+            ModReflect.GetStatic<(int purity, double bonus)[]>(typeof(MachinePurifier), "DIRT_BONUS_CURVE");
+        List<int> specialPurities = new List<int>(dirtBonusCurve.Length);
+        foreach ((int purity, double bonus) in dirtBonusCurve)
+        {
+            specialPurities.Add(purity);
+        }
+        return specialPurities;
+    }
 }

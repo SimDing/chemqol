@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 internal interface IPurifierMath
 {
     int GetMaxPurityCap(int quality);
     long GetRemovalBudget(long totalVolume, int inputPurity, int performance);
+    List<int> GetSpecialPurities();
 }
 
 internal sealed class PurifierCalculatorInput
@@ -35,7 +37,7 @@ internal static class PurifierCalculator
     private const long MaxContainerVolume = int.MaxValue;
     private const double MachineMaximumDisplayTolerance = 0.02;
 
-    internal static readonly int[] TargetPurities = { 9990, 9900, 9800, 9600, 9000 };
+    internal static readonly int[] TargetPurities = [9990, 9900, 9800, 9600, 9000];
 
     public static PurifierCalculatorResult Calculate(PurifierCalculatorInput input, IPurifierMath purifierMath)
     {
@@ -51,22 +53,13 @@ internal static class PurifierCalculator
 
         int machineMaximum = purifierMath.GetMaxPurityCap(input.Quality);
         int[] targetPurities = GetTargetPurities(machineMaximum);
+        List<int> specialPurities = purifierMath.GetSpecialPurities();
 
         var xValues = new int[targetPurities.Length][];
         var yValues = new long[targetPurities.Length][];
         for (int series = 0; series < targetPurities.Length; series++)
         {
-            int maximumInputPurity = Math.Max(
-                MinPurity,
-                PurityAtMaxVolume(input, purifierMath, targetPurities[series]));
-            xValues[series] = new int[PointCount];
-            yValues[series] = new long[PointCount];
-            for (int point = 0; point < PointCount; point++)
-            {
-                int inputPurity = MinPurity + (maximumInputPurity - MinPurity) * point / (PointCount - 1);
-                xValues[series][point] = inputPurity;
-                yValues[series][point] = MaxVolumeForTarget(inputPurity, targetPurities[series], input.Performance, purifierMath);
-            }
+            (xValues[series], yValues[series]) = SampleSeries(input, purifierMath, targetPurities[series], specialPurities);
         }
 
         return new PurifierCalculatorResult
@@ -75,6 +68,48 @@ internal static class PurifierCalculator
             YValues = yValues,
             Purities = targetPurities
         };
+    }
+
+    private static (int[], long[]) SampleSeries(PurifierCalculatorInput input, IPurifierMath purifierMath, int targetPurity, List<int> specialPurities)
+    {
+        int[] xValues = SamplingGrid(input, purifierMath, targetPurity, specialPurities);
+        long[] yValues = new long[xValues.Length];
+        for (int i = 0; i < xValues.Length; i++)
+        {
+            yValues[i] = MaxVolumeForTarget(xValues[i], targetPurity, input.Performance, purifierMath);
+        }
+        return (xValues, yValues);
+    }
+
+    private static int[] SamplingGrid(PurifierCalculatorInput input, IPurifierMath purifierMath, int targetPurity, List<int> specialPurities)
+    {
+        int maximumInputPurity = Math.Max(
+                                MinPurity,
+                                PurityAtMaxVolume(input, purifierMath, targetPurity));
+        int xRange = maximumInputPurity - MinPurity;
+        List<int> importantPoints = ImportantSamplingPoints(specialPurities, maximumInputPurity);
+        int pointCount = Math.Max(Convert.ToInt32((double)PointCount * xRange / 2000.0), importantPoints.Count + 2);
+        int[] uniformGrid = UniformGrid(xRange, pointCount - importantPoints.Count);
+        return uniformGrid.Union(importantPoints).OrderBy(x => x).ToArray();
+    }
+
+    private static int[] UniformGrid(int xRange, int pointCount)
+    {
+        int[] grid = new int[pointCount];
+        for (int i = 0; i < pointCount; i++)
+        {
+            int inputPurity = MinPurity + xRange * i / (pointCount - 1);
+            grid[i] = inputPurity;
+        }
+
+        return grid;
+    }
+
+    private static List<int> ImportantSamplingPoints(List<int> specialPurities, int maximumInputPurity)
+    {
+        List<int> filteredSpecialPurities = specialPurities.FindAll(purity => purity > MinPurity && purity < maximumInputPurity);
+        filteredSpecialPurities.Sort((a, b) => a.CompareTo(b));
+        return filteredSpecialPurities;
     }
 
     private static int PurityAtMaxVolume(PurifierCalculatorInput input, IPurifierMath purifierMath, int targetPurity)
